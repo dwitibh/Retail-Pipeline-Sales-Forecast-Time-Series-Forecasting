@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Retail Pipeline Forecast · Dwiti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Figtree", sans-serif;
+    color: #1F2937;
+    background:
+      radial-gradient(80% 60% at 20% 0%, #F1ECFF 0%, transparent 60%),
+      radial-gradient(70% 50% at 100% 10%, #EEF2FF 0%, transparent 55%),
+      linear-gradient(180deg, #FAFAFA 0%, #F8F6FF 100%);
+    min-height: 100vh;
+    min-width: 1550px;
+  }
+
+  .app {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    flex: 0 0 220px;
+    width: 220px;
+    height: 720px;
+    background: #fff;
+    border-right: 1px solid #F0EBFF;
+    position: relative;
+    padding: 18px 12px;
+    box-shadow: 0 4px 20px rgba(91,33,182,0.04);
+    border-radius: 8px;
+    overflow-y: auto;
+  }
+  .sidebar::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: linear-gradient(180deg, #C4B5FD, #DDD6FE);
+    border-radius: 8px 0 0 8px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 10px 16px;
+    border-bottom: 1px solid #F0EBFF;
+    margin-bottom: 10px;
+  }
+  .brand-mark {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-family: "Plus Jakarta Sans", sans-serif; font-weight: 800; font-size: 16px;
+    box-shadow: 0 6px 14px rgba(124,58,237,0.32);
+  }
+  .brand-text { font-family: "Plus Jakarta Sans", sans-serif; }
+  .brand-text .t1 { font-weight: 800; color: #1F1147; font-size: 14px; letter-spacing: .2px; }
+  .brand-text .t2 { font-weight: 500; color: #7C3AED; font-size: 11px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 10px; cursor: pointer;
+    color: #4B5563; font-weight: 600; font-size: 13px;
+    margin-bottom: 3px;
+    transition: background 160ms, color 160ms;
+    user-select: none;
+  }
+  .nav-item:hover { background: #FAF8FF; color: #5B21B6; }
+  .nav-item.active { background: #EDE9FE; color: #7C3AED; }
+  .nav-item .ico { width: 18px; height: 18px; flex: 0 0 18px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .sidebar-foot {
+    position: absolute; bottom: 18px; left: 14px; right: 14px;
+    padding: 12px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, #F3F0FF 0%, #EEF2FF 100%);
+    border: 1px solid #E8E4FF;
+    font-size: 11px; color: #6B21A8; line-height: 1.5;
+  }
+
+  /* Main */
+  .main { flex: none; display: flex; flex-direction: column; gap: 10px; }
+  .pbi-canvas {
+    width: 1280px; height: 720px;
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 4px 32px rgba(91,33,182,0.13), 0 1px 4px rgba(0,0,0,0.08);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    border: 1px solid #E8E4FF;
+  }
+  .page-shell { flex: 1; overflow: hidden; min-height: 0; animation: pageFade 200ms ease-out both; position: relative; }
+  @keyframes pageFade {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .page-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 10px 20px 8px;
+    border-bottom: 1px solid #F0EBFF;
+    gap: 12px;
+  }
+  .page-title { margin: 0; font-family: "Plus Jakarta Sans", sans-serif; font-weight: 800; font-size: 20px; color: #5B21B6; }
+  .page-sub { font-size: 11.5px; color: #6B7280; font-weight: 500; }
+  .page-content {
+    padding: 10px 18px 12px;
+    height: calc(720px - 46px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .page-content > * { min-height: 0; }
+  .page-content > .grid-2,
+  .page-content > .grid-3,
+  .page-content > .grid-2-3,
+  .page-content > .grid-3-2,
+  .page-content > .method-grid { flex: 1 1 auto; }
+  .page-content > *:last-child { flex: 1 1 auto; }
+
+  /* KPI cards */
+  .kpi-strip { display: flex; gap: 10px; flex: 0 0 auto; }
+  .kpi-card {
+    background: #fff; border: 1px solid #E8E4FF; border-radius: 14px;
+    padding: 14px 18px; flex: 1; min-width: 0;
+    box-shadow: 0 6px 22px rgba(91,33,182,0.08);
+  }
+  .kpi-label { font-size: 12px; color: #6B7280; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; }
+  .kpi-value { margin-top: 6px; font-family: "Plus Jakarta Sans", sans-serif; font-size: 30px; font-weight: 800; color: #7C3AED; line-height: 1.1; }
+  .kpi-value .unit { font-size: 16px; font-weight: 700; margin-left: 3px; color: #7C3AED; }
+  .kpi-sub { margin-top: 6px; font-size: 11.5px; color: #6B7280; font-weight: 500; }
+  .kpi-card.alt .kpi-value { color: #5B21B6; }
+  .kpi-card.accent { background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%); border: none; }
+  .kpi-card.accent .kpi-label,
+  .kpi-card.accent .kpi-value,
+  .kpi-card.accent .kpi-value .unit,
+  .kpi-card.accent .kpi-sub { color: #fff; }
+  .kpi-card.accent .kpi-label { opacity: .85; }
+  .kpi-card.accent .kpi-sub { opacity: .8; }
+
+  /* Cards */
+  .card {
+    background: #fff; border: 1px solid #E8E4FF; border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 4px 20px rgba(91,33,182,0.06);
+  }
+  .card-title { font-family: "Plus Jakarta Sans", sans-serif; font-size: 13.5px; font-weight: 700; color: #5B21B6; }
+  .card-sub   { font-size: 10.5px; color: #6B7280; margin-top: 2px; }
+  .card-spacer { height: 4px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; grid-auto-rows: 1fr; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; grid-auto-rows: 1fr; }
+  .grid-2-3 { display: grid; grid-template-columns: 2fr 3fr; gap: 8px; grid-auto-rows: 1fr; }
+  .grid-3-2 { display: grid; grid-template-columns: 3fr 2fr; gap: 8px; grid-auto-rows: 1fr; }
+
+  /* Chart legend */
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: #4B5563; font-weight: 500; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* Table */
+  table.dt { width: 100%; border-collapse: collapse; font-family: "Figtree", sans-serif; }
+  table.dt thead th { text-align: left; padding: 9px 12px; background: #FAF8FF; font-size: 11px; font-weight: 700; color: #6B21A8; border-bottom: 1px solid #EDE9FE; }
+  table.dt td { padding: 9px 12px; font-size: 12px; color: #1F2937; border-bottom: 1px solid #F5F3FF; }
+  table.dt tr:nth-child(even) td { background: #FAFAFA; }
+  table.dt tr:hover td { background: #FAF8FF; box-shadow: inset 3px 0 0 #7C3AED; }
+
+  /* Pill */
+  .pill {
+    display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px;
+    font-family: "Plus Jakarta Sans", sans-serif; font-weight: 700; font-size: 11px;
+    background: #D1FADF; color: #027A48; border: 1px solid #A6F4C5;
+  }
+  .pill.amber { background: #FEF0C7; color: #93370D; border-color: #FEDF89; }
+  .pill.red   { background: #FEE4E2; color: #B42318; border-color: #FECDCA; }
+  .pill.purple { background: #EDE9FE; color: #6D28D9; border-color: #DDD6FE; }
+
+  /* Footnote */
+  .data-footnote {
+    width: 1280px;
+    margin: 0;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: rgba(243, 240, 255, 0.6);
+    border: 1px dashed #DDD6FE;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #6B21A8;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .data-footnote strong { color: #5B21B6; font-weight: 700; }
+
+  /* Chart elements */
+  .axis-line { stroke: #F0EBFF; }
+  .axis-tick { font-size: 10px; fill: #9CA3AF; font-family: "Figtree", sans-serif; }
+
+  /* Method page */
+  .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; grid-auto-rows: 1fr; }
+  .method-block h4 { margin: 0 0 4px; font-family: "Plus Jakarta Sans", sans-serif; font-size: 13px; color: #5B21B6; font-weight: 700; }
+  .method-block p  { margin: 0 0 6px; font-size: 12px; line-height: 1.5; color: #374151; }
+  .method-block .tag { display: inline-block; background: #F3F0FF; color: #6D28D9; border: 1px solid #E8E4FF; border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 600; margin-right: 4px; }
+  .caveat { background: linear-gradient(135deg, #FFF7ED 0%, #FEF3C7 100%); border: 1px solid #FDE68A; }
+  .caveat .card-title { color: #92400E; }
+  .caveat p { color: #78350F; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">PF</div>
+      <div class="brand-text">
+        <div class="t1">Pipeline Forecast</div>
+        <div class="t2">Retail · Prophet · Daily</div>
+      </div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="sidebar-foot">
+      <strong>Data:</strong> 1,080 days of daily sales for product 2667437 at store QLD_CW_ST0203 (Jan 2018 to Dec 2020). Public retail dataset. Forecast horizon: 100 days.
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="pbi-canvas">
+      <div class="page-shell" id="page"></div>
+    </div>
+    <div class="data-footnote">
+      <span>⚠</span>
+      <span><strong>Portfolio disclosure.</strong> Public dataset. Single SKU at a single store, 1,080 daily observations. Headline numbers are exact; insights are indicative of pipeline competence rather than commercial materiality. Methodology, validation harness, and architectural choices are what this project demonstrates.</span>
+    </div>
+  </div>
+</div>
+
+<script id="forecast-data" type="application/json">{"meta":{"product":"2667437","store":"QLD_CW_ST0203","range_start":"2018-01-01","range_end":"2020-12-16","n_observations":1080,"forecast_start":"2020-12-17","forecast_end":"2021-03-26","forecast_horizon":100,"holdout_days":100,"coefficients":[3465.0395,380.2958,-472.7605,-1323.6117,183.6894,101.5069,537.8969,135.314,-55.2952,-87.84,2.7074,21.1843,-22.71,16.1119,3.7431,-3.3336]},"kpis":{"total_observed":4371967,"avg_daily":4048,"forecast_total":366281,"peak_date":"2021-02-07","peak_value":4039,"test_mape":22.61,"test_rmse":1165,"test_mae":869,"train_mape":15.59,"train_rmse":808,"sigma":808},"history_weekly":[{"ds":"2018-01-01","y":2926,"yhat":2324.37},{"ds":"2018-01-08","y":2793,"yhat":2491.1},{"ds":"2018-01-15","y":2261,"yhat":2652.12},{"ds":"2018-01-22","y":2793,"yhat":2786.01},{"ds":"2018-01-29","y":2793,"yhat":2874.29},{"ds":"2018-02-05","y":2261,"yhat":2904.44},{"ds":"2018-02-12","y":2660,"yhat":2872.39},{"ds":"2018-02-19","y":2660,"yhat":2784.14},{"ds":"2018-02-26","y":2582.06,"yhat":2655.92},{"ds":"2018-03-05","y":4752.09,"yhat":2512.65},{"ds":"2018-03-12","y":2261,"yhat":2384.81},{"ds":"2018-03-19","y":2660,"yhat":2304.14},{"ds":"2018-03-26","y":2519.02,"yhat":2298.59},{"ds":"2018-04-02","y":2527,"yhat":2387.72},{"ds":"2018-04-09","y":2261,"yhat":2578.95},{"ds":"2018-04-16","y":2261,"yhat":2865.85},{"ds":"2018-04-23","y":2128,"yhat":3228.37},{"ds":"2018-04-30","y":5187,"yhat":3635.56},{"ds":"2018-05-07","y":5110.66,"yhat":4049.94},{"ds":"2018-05-14","y":4921,"yhat":4433.13},{"ds":"2018-05-21","y":4788,"yhat":4751.63},{"ds":"2018-05-28","y":4783.08,"yhat":4981.83},{"ds":"2018-06-04","y":4788,"yhat":5113.26},{"ds":"2018-06-11","y":4788,"yhat":5149.78},{"ds":"2018-06-18","y":4389,"yhat":5108.21},{"ds":"2018-06-25","y":4788,"yhat":5014.96},{"ds":"2018-07-02","y":5048.02,"yhat":4901.21},{"ds":"2018-07-09","y":4681.6,"yhat":4797.37},{"ds":"2018-07-16","y":4522,"yhat":4728.12},{"ds":"2018-07-23","y":4522,"yhat":4708.48},{"ds":"2018-07-30","y":5048.02,"yhat":4741.88},{"ds":"2018-08-06","y":5054,"yhat":4820.21},{"ds":"2018-08-13","y":4389,"yhat":4925.81},{"ds":"2018-08-20","y":4655,"yhat":5034.93},{"ds":"2018-08-27","y":4921,"yhat":5121.88},{"ds":"2018-09-03","y":4788,"yhat":5163.24},{"ds":"2018-09-10","y":4921,"yhat":5141.29},{"ds":"2018-09-17","y":4788,"yhat":5046.28},{"ds":"2018-09-24","y":5054,"yhat":4877.24},{"ds":"2018-10-01","y":4921,"yhat":4641.48},{"ds":"2018-10-08","y":5238.87,"yhat":4353.02},{"ds":"2018-10-15","y":5032.85,"yhat":4030.36},{"ds":"2018-10-22","y":5320,"yhat":3694.12},{"ds":"2018-10-29","y":5035.81,"yhat":3364.93},{"ds":"2018-11-05","y":2394,"yhat":3061.7},{"ds":"2018-11-12","y":2128,"yhat":2800.55},{"ds":"2018-11-19","y":2128,"yhat":2594.04},{"ds":"2018-11-26","y":2527,"yhat":2450.81},{"ds":"2018-12-03","y":2793,"yhat":2375.31},{"ds":"2018-12-10","y":2394,"yhat":2367.43},{"ds":"2018-12-17","y":2494.44,"yhat":2422.29},{"ds":"2018-12-24","y":2246.08,"yhat":2530.02},{"ds":"2018-12-31","y":2793,"yhat":2675.96},{"ds":"2019-01-07","y":2956.59,"yhat":2841.4},{"ds":"2019-01-14","y":3657.5,"yhat":3005.06},{"ds":"2019-01-21","y":2628.08,"yhat":3145.27},{"ds":"2019-01-28","y":3224.01,"yhat":3242.82},{"ds":"2019-02-04","y":2614.27,"yhat":3283.92},{"ds":"2019-02-11","y":2713.33,"yhat":3262.84},{"ds":"2019-02-18","y":3189.34,"yhat":3183.73},{"ds":"2019-02-25","y":3136.16,"yhat":3061.03},{"ds":"2019-03-04","y":3051.23,"yhat":2918.32},{"ds":"2019-03-11","y":2247.09,"yhat":2785.37},{"ds":"2019-03-18","y":2754.43,"yhat":2694.05},{"ds":"2019-03-25","y":2464.49,"yhat":2673.36},{"ds":"2019-04-01","y":2448.5,"yhat":2744.64},{"ds":"2019-04-08","y":2509.71,"yhat":2917.71},{"ds":"2019-04-15","y":2729.16,"yhat":3188.62},{"ds":"2019-04-22","y":2489.76,"yhat":3539.65},{"ds":"2019-04-29","y":6016.92,"yhat":3941.49},{"ds":"2019-05-06","y":5958.4,"yhat":4357.45},{"ds":"2019-05-13","y":4883.76,"yhat":4748.88},{"ds":"2019-05-20","y":5862.64,"yhat":5081.01},{"ds":"2019-05-27","y":5455.89,"yhat":5328.14},{"ds":"2019-06-03","y":5314.68,"yhat":5477.34},{"ds":"2019-06-10","y":5701.8,"yhat":5529.92},{"ds":"2019-06-17","y":5426.4,"yhat":5500.57},{"ds":"2019-06-24","y":4522,"yhat":5414.33},{"ds":"2019-07-01","y":5098.5,"yhat":5301.92},{"ds":"2019-07-08","y":5770.07,"yhat":5194.28},{"ds":"2019-07-15","y":4979.52,"yhat":5117.43},{"ds":"2019-07-22","y":5266.8,"yhat":5088.33},{"ds":"2019-07-29","y":5411.36,"yhat":5112.54},{"ds":"2019-08-05","y":5266.8,"yhat":5183.9},{"ds":"2019-08-12","y":5104.54,"yhat":5286.26},{"ds":"2019-08-19","y":5027.4,"yhat":5396.63},{"ds":"2019-08-26","y":5452.22,"yhat":5489.37},{"ds":"2019-09-02","y":5659.15,"yhat":5540.37},{"ds":"2019-09-09","y":5256.16,"yhat":5530.69},{"ds":"2019-09-16","y":5861.31,"yhat":5449.05},{"ds":"2019-09-23","y":5155.08,"yhat":5292.92},{"ds":"2019-09-30","y":4840.5,"yhat":5068.22},{"ds":"2019-10-07","y":5965.05,"yhat":4787.91},{"ds":"2019-10-14","y":5324.89,"yhat":4469.87},{"ds":"2019-10-21","y":5687.8,"yhat":4134.52},{"ds":"2019-10-28","y":2687.59,"yhat":3802.61},{"ds":"2019-11-04","y":2705.22,"yhat":3493.48},{"ds":"2019-11-11","y":2468.48,"yhat":3223.78},{"ds":"2019-11-18","y":2213.12,"yhat":3006.76},{"ds":"2019-11-25","y":2729.16,"yhat":2851.79},{"ds":"2019-12-02","y":2820.93,"yhat":2764.06},{"ds":"2019-12-09","y":2577.54,"yhat":2744.32},{"ds":"2019-12-16","y":2328.86,"yhat":2788.56},{"ds":"2019-12-23","y":2609.46,"yhat":2887.8},{"ds":"2019-12-30","y":2926,"yhat":3028.18},{"ds":"2020-01-06","y":3214.34,"yhat":3191.66},{"ds":"2020-01-13","y":3374.91,"yhat":3357.24},{"ds":"2020-01-20","y":2818.22,"yhat":3503.15},{"ds":"2020-01-27","y":3974.25,"yhat":3609.54},{"ds":"2020-02-03","y":5918.64,"yhat":3661.4},{"ds":"2020-02-10","y":3024.82,"yhat":3651.41},{"ds":"2020-02-17","y":3435.71,"yhat":3581.89},{"ds":"2020-02-24","y":2584.1,"yhat":3465.49},{"ds":"2020-03-03","y":3692.63,"yhat":3263.99},{"ds":"2020-03-10","y":2627.61,"yhat":3130.15},{"ds":"2020-03-17","y":2603.32,"yhat":3036.81},{"ds":"2020-03-24","y":3400.08,"yhat":3013.17},{"ds":"2020-03-31","y":3225.72,"yhat":3080.93},{"ds":"2020-04-07","y":2459.67,"yhat":3250.34},{"ds":"2020-04-14","y":2926.86,"yhat":3517.99},{"ds":"2020-04-21","y":2323.78,"yhat":3866.6},{"ds":"2020-04-28","y":7344.79,"yhat":4267.23},{"ds":"2020-05-05","y":2191.84,"yhat":4683.35},{"ds":"2020-05-12","y":6281.66,"yhat":5076.3},{"ds":"2020-05-19","y":5822.53,"yhat":5411.05},{"ds":"2020-05-26","y":5619.04,"yhat":5661.53},{"ds":"2020-06-02","y":5175.43,"yhat":5814.29},{"ds":"2020-06-09","y":5761.56,"yhat":5870.13},{"ds":"2020-06-16","y":5496.04,"yhat":5843.33},{"ds":"2020-06-23","y":6084.35,"yhat":5758.61},{"ds":"2020-06-30","y":5375.49,"yhat":5646.58},{"ds":"2020-07-07","y":8147.74,"yhat":5538.28},{"ds":"2020-07-14","y":4298.56,"yhat":5459.98},{"ds":"2020-07-21","y":4645,"yhat":5429.01},{"ds":"2020-07-28","y":5790.05,"yhat":5451.35},{"ds":"2020-08-04","y":6097.12,"yhat":5521.26},{"ds":"2020-08-11","y":5671.94,"yhat":5622.87},{"ds":"2020-08-18","y":5075.28,"yhat":5733.4},{"ds":"2020-08-25","y":6394.84,"yhat":5827.21},{"ds":"2020-09-01","y":6672.88,"yhat":5880.06},{"ds":"2020-09-08","y":6326.33,"yhat":5872.8},{"ds":"2020-09-15","y":6368.04,"yhat":5793.82},{"ds":"2020-09-22","y":5686.71,"yhat":5640.29},{"ds":"2020-09-29","y":6123.31,"yhat":5417.85},{"ds":"2020-10-06","y":5869.23,"yhat":5139.25},{"ds":"2020-10-13","y":5590.22,"yhat":4822.21},{"ds":"2020-10-20","y":2810.88,"yhat":4487.12},{"ds":"2020-10-27","y":2539.56,"yhat":4154.74},{"ds":"2020-11-03","y":2762.14,"yhat":3844.49},{"ds":"2020-11-10","y":5978.54,"yhat":3573.14},{"ds":"2020-11-17","y":2406.07,"yhat":3354.05},{"ds":"2020-11-24","y":3019.79,"yhat":3196.74},{"ds":"2020-12-01","y":2918.68,"yhat":3106.57},{"ds":"2020-12-08","y":3029.85,"yhat":3084.45},{"ds":"2020-12-15","y":2714.59,"yhat":3126.53}],"history_daily_tail":[{"ds":"2020-05-31","y":5496.04,"yhat":5817.64},{"ds":"2020-06-01","y":4883.76,"yhat":5838.31},{"ds":"2020-06-02","y":5175.43,"yhat":5814.29},{"ds":"2020-06-03","y":5633.56,"yhat":5822.03},{"ds":"2020-06-04","y":5785.82,"yhat":5859.8},{"ds":"2020-06-05","y":5636.43,"yhat":5824.44},{"ds":"2020-06-06","y":6222.48,"yhat":5832.33},{"ds":"2020-06-07","y":5634.75,"yhat":5900.26},{"ds":"2020-06-08","y":5730.59,"yhat":5907.42},{"ds":"2020-06-09","y":5761.56,"yhat":5870.13},{"ds":"2020-06-10","y":6214.97,"yhat":5864.91},{"ds":"2020-06-11","y":5952.44,"yhat":5890.04},{"ds":"2020-06-12","y":5766.91,"yhat":5842.41},{"ds":"2020-06-13","y":5167.05,"yhat":5838.44},{"ds":"2020-06-14","y":5678.17,"yhat":5894.93},{"ds":"2020-06-15","y":6005.59,"yhat":5891.1},{"ds":"2020-06-16","y":5496.04,"yhat":5843.33},{"ds":"2020-06-17","y":6403.15,"yhat":5828.13},{"ds":"2020-06-18","y":5597.29,"yhat":5843.81},{"ds":"2020-06-19","y":5356.34,"yhat":5787.3},{"ds":"2020-06-20","y":5156.35,"yhat":5775.02},{"ds":"2020-06-21","y":5410.88,"yhat":5823.8},{"ds":"2020-06-22","y":5762.84,"yhat":5812.87},{"ds":"2020-06-23","y":6084.35,"yhat":5758.61},{"ds":"2020-06-24","y":4974.2,"yhat":5737.57},{"ds":"2020-06-25","y":5770.02,"yhat":5748.05},{"ds":"2020-06-26","y":5936.04,"yhat":5686.98},{"ds":"2020-06-27","y":5438.17,"yhat":5670.79},{"ds":"2020-06-28","y":5616.34,"yhat":5716.32},{"ds":"2020-06-29","y":4876.18,"yhat":5702.79},{"ds":"2020-06-30","y":5375.49,"yhat":5646.58},{"ds":"2020-07-01","y":5302.43,"yhat":5624.23},{"ds":"2020-07-02","y":5761.3,"yhat":5634.03},{"ds":"2020-07-03","y":6228.02,"yhat":5572.91},{"ds":"2020-07-04","y":6114.83,"yhat":5557.29},{"ds":"2020-07-05","y":5382.95,"yhat":5603.98},{"ds":"2020-07-06","y":6137.53,"yhat":5592.19},{"ds":"2020-07-07","y":8147.74,"yhat":5538.28},{"ds":"2020-07-08","y":6289.38,"yhat":5518.78},{"ds":"2020-07-09","y":6136.64,"yhat":5531.95},{"ds":"2020-07-10","y":6295.35,"yhat":5474.7},{"ds":"2020-07-11","y":5261.58,"yhat":5463.41},{"ds":"2020-07-12","y":6043.91,"yhat":5514.88},{"ds":"2020-07-13","y":5076.85,"yhat":5508.29},{"ds":"2020-07-14","y":4298.56,"yhat":5459.98},{"ds":"2020-07-15","y":5278.29,"yhat":5446.42},{"ds":"2020-07-16","y":6026.92,"yhat":5465.87},{"ds":"2020-07-17","y":6059.45,"yhat":5415.18},{"ds":"2020-07-18","y":4472.81,"yhat":5410.73},{"ds":"2020-07-19","y":5434.49,"yhat":5469.26},{"ds":"2020-07-20","y":6553.81,"yhat":5469.92},{"ds":"2020-07-21","y":4645,"yhat":5429.01},{"ds":"2020-07-22","y":6109.49,"yhat":5422.98},{"ds":"2020-07-23","y":5416.45,"yhat":5450.05},{"ds":"2020-07-24","y":5914.78,"yhat":5407.03},{"ds":"2020-07-25","y":5816.42,"yhat":5410.26},{"ds":"2020-07-26","y":6859.29,"yhat":5476.45},{"ds":"2020-07-27","y":6276.11,"yhat":5484.73},{"ds":"2020-07-28","y":5790.05,"yhat":5451.35},{"ds":"2020-07-29","y":5736.04,"yhat":5452.73},{"ds":"2020-07-30","y":6382.71,"yhat":5487.05},{"ds":"2020-07-31","y":6240.36,"yhat":5451.11},{"ds":"2020-08-01","y":6359.66,"yhat":5461.19},{"ds":"2020-08-02","y":5560.25,"yhat":5534},{"ds":"2020-08-03","y":6320.16,"yhat":5548.61},{"ds":"2020-08-04","y":6097.12,"yhat":5521.26},{"ds":"2020-08-05","y":5635.48,"yhat":5528.34},{"ds":"2020-08-06","y":5943.5,"yhat":5568.01},{"ds":"2020-08-07","y":6165.03,"yhat":5537.03},{"ds":"2020-08-08","y":5443.24,"yhat":5551.69},{"ds":"2020-08-09","y":5308.93,"yhat":5628.64},{"ds":"2020-08-10","y":5973.11,"yhat":5646.96},{"ds":"2020-08-11","y":5671.94,"yhat":5622.87},{"ds":"2020-08-12","y":5921.27,"yhat":5632.73},{"ds":"2020-08-13","y":5148.3,"yhat":5674.7},{"ds":"2020-08-14","y":4978,"yhat":5645.52},{"ds":"2020-08-15","y":5298.58,"yhat":5661.47},{"ds":"2020-08-16","y":5864.85,"yhat":5739.19},{"ds":"2020-08-17","y":5609.94,"yhat":5757.77},{"ds":"2020-08-18","y":5075.28,"yhat":5733.4},{"ds":"2020-08-19","y":5479.87,"yhat":5742.45},{"ds":"2020-08-20","y":5507.8,"yhat":5783.08},{"ds":"2020-08-21","y":5447.63,"yhat":5752.03},{"ds":"2020-08-22","y":5626.86,"yhat":5765.58},{"ds":"2020-08-23","y":5323.3,"yhat":5840.39},{"ds":"2020-08-24","y":6435.07,"yhat":5855.52},{"ds":"2020-08-25","y":6394.84,"yhat":5827.21},{"ds":"2020-08-26","y":6542.67,"yhat":5831.81},{"ds":"2020-08-27","y":6148.79,"yhat":5867.5},{"ds":"2020-08-28","y":5079.11,"yhat":5831.04},{"ds":"2020-08-29","y":6438.42,"yhat":5838.7},{"ds":"2020-08-30","y":5589.19,"yhat":5907.18},{"ds":"2020-08-31","y":5416.19,"yhat":5915.56},{"ds":"2020-09-01","y":6672.88,"yhat":5880.06},{"ds":"2020-09-02","y":5828.92,"yhat":5877.1},{"ds":"2020-09-03","y":5567.49,"yhat":5904.84},{"ds":"2020-09-04","y":6543.13,"yhat":5860.08},{"ds":"2020-09-05","y":6442.73,"yhat":5859.11},{"ds":"2020-09-06","y":5077.67,"yhat":5918.64},{"ds":"2020-09-07","y":6218.95,"yhat":5917.78},{"ds":"2020-09-08","y":6326.33,"yhat":5872.8},{"ds":"2020-09-09","y":6202.27,"yhat":5860.1},{"ds":"2020-09-10","y":5757.57,"yhat":5877.9},{"ds":"2020-09-11","y":6279.2,"yhat":5823},{"ds":"2020-09-12","y":5413.84,"yhat":5811.73},{"ds":"2020-09-13","y":5155.59,"yhat":5860.84},{"ds":"2020-09-14","y":5550.09,"yhat":5849.44},{"ds":"2020-09-15","y":6368.04,"yhat":5793.82},{"ds":"2020-09-16","y":6212.99,"yhat":5770.44},{"ds":"2020-09-17","y":5228.5,"yhat":5777.52},{"ds":"2020-09-18","y":6222.11,"yhat":5711.9},{"ds":"2020-09-19","y":6002.64,"yhat":5689.94},{"ds":"2020-09-20","y":6191.95,"yhat":5728.39},{"ds":"2020-09-21","y":6678.78,"yhat":5706.4},{"ds":"2020-09-22","y":5686.71,"yhat":5640.29},{"ds":"2020-09-23","y":6082.99,"yhat":5606.54},{"ds":"2020-09-24","y":5761.56,"yhat":5603.39},{"ds":"2020-09-25","y":6362.62,"yhat":5527.69},{"ds":"2020-09-26","y":6497.01,"yhat":5495.84},{"ds":"2020-09-27","y":5787.1,"yhat":5524.61},{"ds":"2020-09-28","y":2788.53,"yhat":5493.17},{"ds":"2020-09-29","y":6123.31,"yhat":5417.85},{"ds":"2020-09-30","y":5421.36,"yhat":5375.15},{"ds":"2020-10-01","y":5119.32,"yhat":5363.33},{"ds":"2020-10-02","y":5515.94,"yhat":5279.28},{"ds":"2020-10-03","y":6451.43,"yhat":5239.37},{"ds":"2020-10-04","y":5465.9,"yhat":5260.42},{"ds":"2020-10-05","y":6222.21,"yhat":5221.59},{"ds":"2020-10-06","y":5869.23,"yhat":5139.25},{"ds":"2020-10-07","y":7098.41,"yhat":5089.88},{"ds":"2020-10-08","y":5557.39,"yhat":5071.78},{"ds":"2020-10-09","y":6722.35,"yhat":4981.82},{"ds":"2020-10-10","y":6235.73,"yhat":4936.42},{"ds":"2020-10-11","y":6450.09,"yhat":4952.35},{"ds":"2020-10-12","y":5651.03,"yhat":4908.84},{"ds":"2020-10-13","y":5590.22,"yhat":4822.21},{"ds":"2020-10-14","y":6283.38,"yhat":4768.99},{"ds":"2020-10-15","y":6160.21,"yhat":4747.45},{"ds":"2020-10-16","y":2409.68,"yhat":4654.48},{"ds":"2020-10-17","y":2510.51,"yhat":4606.49},{"ds":"2020-10-18","y":2511.14,"yhat":4620.28},{"ds":"2020-10-19","y":2633.61,"yhat":4575.04},{"ds":"2020-10-20","y":2810.88,"yhat":4487.12},{"ds":"2020-10-21","y":5972.19,"yhat":4433.03},{"ds":"2020-10-22","y":6378.68,"yhat":4411.04},{"ds":"2020-10-23","y":2421.98,"yhat":4318.06},{"ds":"2020-10-24","y":3111,"yhat":4270.46},{"ds":"2020-10-25","y":2871.5,"yhat":4285.06},{"ds":"2020-10-26","y":3190.72,"yhat":4241.04},{"ds":"2020-10-27","y":2539.56,"yhat":4154.74},{"ds":"2020-10-28","y":2714.47,"yhat":4102.68},{"ds":"2020-10-29","y":5958.37,"yhat":4083.11},{"ds":"2020-10-30","y":6144,"yhat":3992.92},{"ds":"2020-10-31","y":7469.28,"yhat":3948.5},{"ds":"2020-11-01","y":6852.16,"yhat":3966.64},{"ds":"2020-11-02","y":2784.87,"yhat":3926.53},{"ds":"2020-11-03","y":2762.14,"yhat":3844.49},{"ds":"2020-11-04","y":3165.11,"yhat":3797.03},{"ds":"2020-11-05","y":2417.94,"yhat":3782.39},{"ds":"2020-11-06","y":3566.1,"yhat":3697.47},{"ds":"2020-11-07","y":3640.21,"yhat":3658.63},{"ds":"2020-11-08","y":2885.57,"yhat":3682.65},{"ds":"2020-11-09","y":7407.04,"yhat":3648.71},{"ds":"2020-11-10","y":5978.54,"yhat":3573.14},{"ds":"2020-11-11","y":2740.01,"yhat":3532.4},{"ds":"2020-11-12","y":2434.43,"yhat":3524.77},{"ds":"2020-11-13","y":2962.81,"yhat":3447.09},{"ds":"2020-11-14","y":2737.03,"yhat":3415.74},{"ds":"2020-11-15","y":3188.81,"yhat":3447.48},{"ds":"2020-11-16","y":2714.8,"yhat":3421.48},{"ds":"2020-11-17","y":2406.07,"yhat":3354.05},{"ds":"2020-11-18","y":2589.35,"yhat":3321.65},{"ds":"2020-11-19","y":2435.5,"yhat":3322.54},{"ds":"2020-11-20","y":2665.96,"yhat":3253.55},{"ds":"2020-11-21","y":3281.09,"yhat":3231.05},{"ds":"2020-11-22","y":2696.38,"yhat":3271.79},{"ds":"2020-11-23","y":2577.79,"yhat":3254.92},{"ds":"2020-11-24","y":3019.79,"yhat":3196.74},{"ds":"2020-11-25","y":3056.66,"yhat":3173.71},{"ds":"2020-11-26","y":2678.62,"yhat":3184.06},{"ds":"2020-11-27","y":2823.75,"yhat":3124.61},{"ds":"2020-11-28","y":3388.25,"yhat":3111.73},{"ds":"2020-11-29","y":3501.03,"yhat":3162.14},{"ds":"2020-11-30","y":3050.91,"yhat":3155},{"ds":"2020-12-01","y":2918.68,"yhat":3106.57},{"ds":"2020-12-02","y":2933.77,"yhat":3093.31},{"ds":"2020-12-03","y":3622.8,"yhat":3113.44},{"ds":"2020-12-04","y":2629.79,"yhat":3063.77},{"ds":"2020-12-05","y":2463.13,"yhat":3060.63},{"ds":"2020-12-06","y":2684.26,"yhat":3120.76},{"ds":"2020-12-07","y":2741.29,"yhat":3123.27},{"ds":"2020-12-08","y":3029.85,"yhat":3084.45},{"ds":"2020-12-09","y":2603.32,"yhat":3080.71},{"ds":"2020-12-10","y":2997.05,"yhat":3110.26},{"ds":"2020-12-11","y":2921.64,"yhat":3069.91},{"ds":"2020-12-12","y":3167.59,"yhat":3075.98},{"ds":"2020-12-13","y":3167.59,"yhat":3145.17},{"ds":"2020-12-14","y":3383.35,"yhat":3156.6},{"ds":"2020-12-15","y":2714.59,"yhat":3126.53},{"ds":"2020-12-16","y":2585.04,"yhat":3131.36}],"forecast":[{"ds":"2020-12-17","yhat":3169.29,"lower":1585.19,"upper":4753.39},{"ds":"2020-12-18","yhat":3137.1,"lower":1553,"upper":4721.21},{"ds":"2020-12-19","yhat":3151.11,"lower":1567.01,"upper":4735.21},{"ds":"2020-12-20","yhat":3228.01,"lower":1643.91,"upper":4812.11},{"ds":"2020-12-21","yhat":3246.89,"lower":1662.79,"upper":4830.99},{"ds":"2020-12-22","yhat":3224.01,"lower":1639.9,"upper":4808.11},{"ds":"2020-12-23","yhat":3235.75,"lower":1651.64,"upper":4819.85},{"ds":"2020-12-24","yhat":3280.29,"lower":1696.19,"upper":4864.39},{"ds":"2020-12-25","yhat":3254.41,"lower":1670.31,"upper":4838.51},{"ds":"2020-12-26","yhat":3274.41,"lower":1690.31,"upper":4858.51},{"ds":"2020-12-27","yhat":3356.96,"lower":1772.86,"upper":4941.06},{"ds":"2020-12-28","yhat":3381.15,"lower":1797.05,"upper":4965.25},{"ds":"2020-12-29","yhat":3363.22,"lower":1779.11,"upper":4947.32},{"ds":"2020-12-30","yhat":3379.54,"lower":1795.44,"upper":4963.64},{"ds":"2020-12-31","yhat":3428.29,"lower":1844.18,"upper":5012.39},{"ds":"2021-01-01","yhat":3406.22,"lower":1822.12,"upper":4990.33},{"ds":"2021-01-02","yhat":3429.64,"lower":1845.53,"upper":5013.74},{"ds":"2021-01-03","yhat":3515.2,"lower":1931.09,"upper":5099.3},{"ds":"2021-01-04","yhat":3541.98,"lower":1957.88,"upper":5126.08},{"ds":"2021-01-05","yhat":3526.21,"lower":1942.11,"upper":5110.31},{"ds":"2021-01-06","yhat":3544.27,"lower":1960.17,"upper":5128.38},{"ds":"2021-01-07","yhat":3594.32,"lower":2010.22,"upper":5178.42},{"ds":"2021-01-08","yhat":3573.12,"lower":1989.02,"upper":5157.23},{"ds":"2021-01-09","yhat":3596.95,"lower":2012.85,"upper":5181.05},{"ds":"2021-01-10","yhat":3682.48,"lower":2098.38,"upper":5266.59},{"ds":"2021-01-11","yhat":3708.79,"lower":2124.69,"upper":5292.89},{"ds":"2021-01-12","yhat":3692.1,"lower":2107.99,"upper":5276.2},{"ds":"2021-01-13","yhat":3708.78,"lower":2124.68,"upper":5292.88},{"ds":"2021-01-14","yhat":3757.01,"lower":2172.9,"upper":5341.11},{"ds":"2021-01-15","yhat":3733.54,"lower":2149.43,"upper":5317.64},{"ds":"2021-01-16","yhat":3754.66,"lower":2170.55,"upper":5338.76},{"ds":"2021-01-17","yhat":3837.04,"lower":2252.94,"upper":5421.14},{"ds":"2021-01-18","yhat":3859.77,"lower":2275.67,"upper":5443.87},{"ds":"2021-01-19","yhat":3839.08,"lower":2254.97,"upper":5423.18},{"ds":"2021-01-20","yhat":3851.35,"lower":2267.25,"upper":5435.45},{"ds":"2021-01-21","yhat":3894.76,"lower":2310.66,"upper":5478.86},{"ds":"2021-01-22","yhat":3866.09,"lower":2281.98,"upper":5450.19},{"ds":"2021-01-23","yhat":3881.62,"lower":2297.52,"upper":5465.72},{"ds":"2021-01-24","yhat":3958.06,"lower":2373.96,"upper":5542.16},{"ds":"2021-01-25","yhat":3974.49,"lower":2390.39,"upper":5558.59},{"ds":"2021-01-26","yhat":3947.16,"lower":2363.06,"upper":5531.27},{"ds":"2021-01-27","yhat":3952.49,"lower":2368.39,"upper":5536.59},{"ds":"2021-01-28","yhat":3988.66,"lower":2404.56,"upper":5572.76},{"ds":"2021-01-29","yhat":3952.47,"lower":2368.37,"upper":5536.57},{"ds":"2021-01-30","yhat":3960.23,"lower":2376.13,"upper":5544.33},{"ds":"2021-01-31","yhat":4028.66,"lower":2444.56,"upper":5612.76},{"ds":"2021-02-01","yhat":4036.88,"lower":2452.77,"upper":5620.98},{"ds":"2021-02-02","yhat":4001.15,"lower":2417.05,"upper":5585.26},{"ds":"2021-02-03","yhat":3997.92,"lower":2413.82,"upper":5582.02},{"ds":"2021-02-04","yhat":4025.4,"lower":2441.3,"upper":5609.5},{"ds":"2021-02-05","yhat":3980.41,"lower":2396.31,"upper":5564.51},{"ds":"2021-02-06","yhat":3979.29,"lower":2395.19,"upper":5563.39},{"ds":"2021-02-07","yhat":4038.79,"lower":2454.69,"upper":5622.9},{"ds":"2021-02-08","yhat":4038.06,"lower":2453.96,"upper":5622.16},{"ds":"2021-02-09","yhat":3993.4,"lower":2409.3,"upper":5577.5},{"ds":"2021-02-10","yhat":3981.27,"lower":2397.17,"upper":5565.37},{"ds":"2021-02-11","yhat":3999.91,"lower":2415.81,"upper":5584.01},{"ds":"2021-02-12","yhat":3946.18,"lower":2362.08,"upper":5530.29},{"ds":"2021-02-13","yhat":3936.47,"lower":2352.36,"upper":5520.57},{"ds":"2021-02-14","yhat":3987.52,"lower":2403.42,"upper":5571.63},{"ds":"2021-02-15","yhat":3978.54,"lower":2394.44,"upper":5562.64},{"ds":"2021-02-16","yhat":3925.85,"lower":2341.75,"upper":5509.95},{"ds":"2021-02-17","yhat":3905.94,"lower":2321.83,"upper":5490.04},{"ds":"2021-02-18","yhat":3917.08,"lower":2332.98,"upper":5501.19},{"ds":"2021-02-19","yhat":3856.17,"lower":2272.07,"upper":5440.28},{"ds":"2021-02-20","yhat":3839.61,"lower":2255.51,"upper":5423.71},{"ds":"2021-02-21","yhat":3884.2,"lower":2300.1,"upper":5468.3},{"ds":"2021-02-22","yhat":3869.13,"lower":2285.03,"upper":5453.24},{"ds":"2021-02-23","yhat":3810.79,"lower":2226.69,"upper":5394.89},{"ds":"2021-02-24","yhat":3785.67,"lower":2201.57,"upper":5369.77},{"ds":"2021-02-25","yhat":3792.09,"lower":2207.98,"upper":5376.19},{"ds":"2021-02-26","yhat":3726.94,"lower":2142.84,"upper":5311.04},{"ds":"2021-02-27","yhat":3706.66,"lower":2122.56,"upper":5290.77},{"ds":"2021-02-28","yhat":3748.07,"lower":2163.97,"upper":5332.17},{"ds":"2021-03-01","yhat":3730.39,"lower":2146.29,"upper":5314.5},{"ds":"2021-03-02","yhat":3670.01,"lower":2085.91,"upper":5254.11},{"ds":"2021-03-03","yhat":3643.45,"lower":2059.35,"upper":5227.55},{"ds":"2021-03-04","yhat":3649.03,"lower":2064.93,"upper":5233.13},{"ds":"2021-03-05","yhat":3583.67,"lower":1999.57,"upper":5167.77},{"ds":"2021-03-06","yhat":3563.81,"lower":1979.71,"upper":5147.91},{"ds":"2021-03-07","yhat":3606.28,"lower":2022.18,"upper":5190.38},{"ds":"2021-03-08","yhat":3590.31,"lower":2006.21,"upper":5174.41},{"ds":"2021-03-09","yhat":3532.29,"lower":1948.19,"upper":5116.39},{"ds":"2021-03-10","yhat":3508.75,"lower":1924.64,"upper":5092.85},{"ds":"2021-03-11","yhat":3518,"lower":1933.9,"upper":5102.11},{"ds":"2021-03-12","yhat":3456.98,"lower":1872.88,"upper":5041.08},{"ds":"2021-03-13","yhat":3442.11,"lower":1858.01,"upper":5026.21},{"ds":"2021-03-14","yhat":3490.22,"lower":1906.12,"upper":5074.32},{"ds":"2021-03-15","yhat":3480.54,"lower":1896.43,"upper":5064.64},{"ds":"2021-03-16","yhat":3429.43,"lower":1845.33,"upper":5013.53},{"ds":"2021-03-17","yhat":3413.43,"lower":1829.32,"upper":4997.53},{"ds":"2021-03-18","yhat":3430.83,"lower":1846.73,"upper":5014.93},{"ds":"2021-03-19","yhat":3378.55,"lower":1794.44,"upper":4962.65},{"ds":"2021-03-20","yhat":3372.99,"lower":1788.89,"upper":4957.09},{"ds":"2021-03-21","yhat":3430.96,"lower":1846.86,"upper":5015.07},{"ds":"2021-03-22","yhat":3431.68,"lower":1847.57,"upper":5015.78},{"ds":"2021-03-23","yhat":3391.48,"lower":1807.38,"upper":4975.58},{"ds":"2021-03-24","yhat":3386.87,"lower":1802.77,"upper":4970.97},{"ds":"2021-03-25","yhat":3416.12,"lower":1832.02,"upper":5000.22},{"ds":"2021-03-26","yhat":3376.11,"lower":1792.01,"upper":4960.21}],"components":{"trend":[{"ds":"2018-01-01","trend":3465.04},{"ds":"2018-01-15","trend":3479.62},{"ds":"2018-01-29","trend":3494.19},{"ds":"2018-02-12","trend":3508.77},{"ds":"2018-02-26","trend":3523.35},{"ds":"2018-03-12","trend":3537.92},{"ds":"2018-03-26","trend":3552.5},{"ds":"2018-04-09","trend":3567.08},{"ds":"2018-04-23","trend":3581.65},{"ds":"2018-05-07","trend":3596.23},{"ds":"2018-05-21","trend":3610.81},{"ds":"2018-06-04","trend":3625.38},{"ds":"2018-06-18","trend":3639.96},{"ds":"2018-07-02","trend":3654.54},{"ds":"2018-07-16","trend":3669.11},{"ds":"2018-07-30","trend":3683.69},{"ds":"2018-08-13","trend":3698.27},{"ds":"2018-08-27","trend":3712.84},{"ds":"2018-09-10","trend":3727.42},{"ds":"2018-09-24","trend":3742},{"ds":"2018-10-08","trend":3756.57},{"ds":"2018-10-22","trend":3771.15},{"ds":"2018-11-05","trend":3785.73},{"ds":"2018-11-19","trend":3800.3},{"ds":"2018-12-03","trend":3814.88},{"ds":"2018-12-17","trend":3829.46},{"ds":"2018-12-31","trend":3844.03},{"ds":"2019-01-14","trend":3858.61},{"ds":"2019-01-28","trend":3873.19},{"ds":"2019-02-11","trend":3887.76},{"ds":"2019-02-25","trend":3902.34},{"ds":"2019-03-11","trend":3916.92},{"ds":"2019-03-25","trend":3931.49},{"ds":"2019-04-08","trend":3946.07},{"ds":"2019-04-22","trend":3960.65},{"ds":"2019-05-06","trend":3975.22},{"ds":"2019-05-20","trend":3989.8},{"ds":"2019-06-03","trend":4004.38},{"ds":"2019-06-17","trend":4018.95},{"ds":"2019-07-01","trend":4033.53},{"ds":"2019-07-15","trend":4048.11},{"ds":"2019-07-29","trend":4062.68},{"ds":"2019-08-12","trend":4077.26},{"ds":"2019-08-26","trend":4091.84},{"ds":"2019-09-09","trend":4106.41},{"ds":"2019-09-23","trend":4120.99},{"ds":"2019-10-07","trend":4135.57},{"ds":"2019-10-21","trend":4150.14},{"ds":"2019-11-04","trend":4164.72},{"ds":"2019-11-18","trend":4179.3},{"ds":"2019-12-02","trend":4193.87},{"ds":"2019-12-16","trend":4208.45},{"ds":"2019-12-30","trend":4223.03},{"ds":"2020-01-13","trend":4237.6},{"ds":"2020-01-27","trend":4252.18},{"ds":"2020-02-10","trend":4266.76},{"ds":"2020-02-24","trend":4281.34},{"ds":"2020-03-10","trend":4296.95},{"ds":"2020-03-24","trend":4311.53},{"ds":"2020-04-07","trend":4326.11},{"ds":"2020-04-21","trend":4340.68},{"ds":"2020-05-05","trend":4355.26},{"ds":"2020-05-19","trend":4369.84},{"ds":"2020-06-02","trend":4384.41},{"ds":"2020-06-16","trend":4398.99},{"ds":"2020-06-30","trend":4413.57},{"ds":"2020-07-14","trend":4428.14},{"ds":"2020-07-28","trend":4442.72},{"ds":"2020-08-11","trend":4457.3},{"ds":"2020-08-25","trend":4471.87},{"ds":"2020-09-08","trend":4486.45},{"ds":"2020-09-22","trend":4501.03},{"ds":"2020-10-06","trend":4515.6},{"ds":"2020-10-20","trend":4530.18},{"ds":"2020-11-03","trend":4544.76},{"ds":"2020-11-17","trend":4559.33},{"ds":"2020-12-01","trend":4573.91},{"ds":"2020-12-15","trend":4588.49},{"ds":"2020-12-29","trend":4603.06},{"ds":"2021-01-12","trend":4617.64},{"ds":"2021-01-26","trend":4632.22},{"ds":"2021-02-09","trend":4646.79},{"ds":"2021-02-23","trend":4661.37},{"ds":"2021-03-09","trend":4675.95},{"ds":"2021-03-23","trend":4690.52}],"yearly":[{"doy":0,"yearly":-1174.63},{"doy":1,"yearly":-1152.34},{"doy":2,"yearly":-1129.78},{"doy":3,"yearly":-1107.01},{"doy":4,"yearly":-1084.11},{"doy":5,"yearly":-1061.13},{"doy":6,"yearly":-1038.13},{"doy":7,"yearly":-1015.19},{"doy":8,"yearly":-992.37},{"doy":9,"yearly":-969.73},{"doy":10,"yearly":-947.33},{"doy":11,"yearly":-925.24},{"doy":12,"yearly":-903.52},{"doy":13,"yearly":-882.24},{"doy":14,"yearly":-861.46},{"doy":15,"yearly":-841.24},{"doy":16,"yearly":-821.63},{"doy":17,"yearly":-802.7},{"doy":18,"yearly":-784.51},{"doy":19,"yearly":-767.1},{"doy":20,"yearly":-750.53},{"doy":21,"yearly":-734.86},{"doy":22,"yearly":-720.13},{"doy":23,"yearly":-706.38},{"doy":24,"yearly":-693.67},{"doy":25,"yearly":-682.02},{"doy":26,"yearly":-671.48},{"doy":27,"yearly":-662.09},{"doy":28,"yearly":-653.86},{"doy":29,"yearly":-646.84},{"doy":30,"yearly":-641.04},{"doy":31,"yearly":-636.49},{"doy":32,"yearly":-633.2},{"doy":33,"yearly":-631.19},{"doy":34,"yearly":-630.45},{"doy":35,"yearly":-631},{"doy":36,"yearly":-632.84},{"doy":37,"yearly":-635.96},{"doy":38,"yearly":-640.36},{"doy":39,"yearly":-646.01},{"doy":40,"yearly":-652.91},{"doy":41,"yearly":-661.03},{"doy":42,"yearly":-670.34},{"doy":43,"yearly":-680.82},{"doy":44,"yearly":-692.43},{"doy":45,"yearly":-705.12},{"doy":46,"yearly":-718.87},{"doy":47,"yearly":-733.61},{"doy":48,"yearly":-749.3},{"doy":49,"yearly":-765.88},{"doy":50,"yearly":-783.29},{"doy":51,"yearly":-801.46},{"doy":52,"yearly":-820.34},{"doy":53,"yearly":-839.84},{"doy":54,"yearly":-859.91},{"doy":55,"yearly":-880.45},{"doy":56,"yearly":-901.39},{"doy":57,"yearly":-922.64},{"doy":58,"yearly":-944.13},{"doy":59,"yearly":-965.77},{"doy":60,"yearly":-987.46},{"doy":61,"yearly":-1009.11},{"doy":62,"yearly":-1030.64},{"doy":63,"yearly":-1051.95},{"doy":64,"yearly":-1072.95},{"doy":65,"yearly":-1093.54},{"doy":66,"yearly":-1113.63},{"doy":67,"yearly":-1133.12},{"doy":68,"yearly":-1151.92},{"doy":69,"yearly":-1169.93},{"doy":70,"yearly":-1187.07},{"doy":71,"yearly":-1203.24},{"doy":72,"yearly":-1218.35},{"doy":73,"yearly":-1232.32},{"doy":74,"yearly":-1245.05},{"doy":75,"yearly":-1256.47},{"doy":76,"yearly":-1266.49},{"doy":77,"yearly":-1275.04},{"doy":78,"yearly":-1282.04},{"doy":79,"yearly":-1287.42},{"doy":80,"yearly":-1291.12},{"doy":81,"yearly":-1293.07},{"doy":82,"yearly":-1293.21},{"doy":83,"yearly":-1291.49},{"doy":84,"yearly":-1287.87},{"doy":85,"yearly":-1282.29},{"doy":86,"yearly":-1274.72},{"doy":87,"yearly":-1265.13},{"doy":88,"yearly":-1253.48},{"doy":89,"yearly":-1239.76},{"doy":90,"yearly":-1223.95},{"doy":91,"yearly":-1206.04},{"doy":92,"yearly":-1186.01},{"doy":93,"yearly":-1163.88},{"doy":94,"yearly":-1139.65},{"doy":95,"yearly":-1113.34},{"doy":96,"yearly":-1084.95},{"doy":97,"yearly":-1054.52},{"doy":98,"yearly":-1022.08},{"doy":99,"yearly":-987.67},{"doy":100,"yearly":-951.32},{"doy":101,"yearly":-913.09},{"doy":102,"yearly":-873.03},{"doy":103,"yearly":-831.2},{"doy":104,"yearly":-787.66},{"doy":105,"yearly":-742.48},{"doy":106,"yearly":-695.74},{"doy":107,"yearly":-647.52},{"doy":108,"yearly":-597.9},{"doy":109,"yearly":-546.97},{"doy":110,"yearly":-494.82},{"doy":111,"yearly":-441.54},{"doy":112,"yearly":-387.24},{"doy":113,"yearly":-332.02},{"doy":114,"yearly":-275.98},{"doy":115,"yearly":-219.23},{"doy":116,"yearly":-161.88},{"doy":117,"yearly":-104.04},{"doy":118,"yearly":-45.82},{"doy":119,"yearly":12.66},{"doy":120,"yearly":71.29},{"doy":121,"yearly":129.95},{"doy":122,"yearly":188.53},{"doy":123,"yearly":246.91},{"doy":124,"yearly":304.98},{"doy":125,"yearly":362.63},{"doy":126,"yearly":419.75},{"doy":127,"yearly":476.22},{"doy":128,"yearly":531.93},{"doy":129,"yearly":586.79},{"doy":130,"yearly":640.69},{"doy":131,"yearly":693.53},{"doy":132,"yearly":745.21},{"doy":133,"yearly":795.65},{"doy":134,"yearly":844.74},{"doy":135,"yearly":892.42},{"doy":136,"yearly":938.59},{"doy":137,"yearly":983.19},{"doy":138,"yearly":1026.15},{"doy":139,"yearly":1067.39},{"doy":140,"yearly":1106.86},{"doy":141,"yearly":1144.51},{"doy":142,"yearly":1180.28},{"doy":143,"yearly":1214.14},{"doy":144,"yearly":1246.05},{"doy":145,"yearly":1275.97},{"doy":146,"yearly":1303.88},{"doy":147,"yearly":1329.77},{"doy":148,"yearly":1353.61},{"doy":149,"yearly":1375.41},{"doy":150,"yearly":1395.17},{"doy":151,"yearly":1412.88},{"doy":152,"yearly":1428.56},{"doy":153,"yearly":1442.23},{"doy":154,"yearly":1453.92},{"doy":155,"yearly":1463.64},{"doy":156,"yearly":1471.44},{"doy":157,"yearly":1477.35},{"doy":158,"yearly":1481.43},{"doy":159,"yearly":1483.72},{"doy":160,"yearly":1484.27},{"doy":161,"yearly":1483.15},{"doy":162,"yearly":1480.41},{"doy":163,"yearly":1476.14},{"doy":164,"yearly":1470.4},{"doy":165,"yearly":1463.26},{"doy":166,"yearly":1454.81},{"doy":167,"yearly":1445.12},{"doy":168,"yearly":1434.28},{"doy":169,"yearly":1422.38},{"doy":170,"yearly":1409.51},{"doy":171,"yearly":1395.76},{"doy":172,"yearly":1381.21},{"doy":173,"yearly":1365.96},{"doy":174,"yearly":1350.11},{"doy":175,"yearly":1333.75},{"doy":176,"yearly":1316.97},{"doy":177,"yearly":1299.87},{"doy":178,"yearly":1282.54},{"doy":179,"yearly":1265.06},{"doy":180,"yearly":1247.54},{"doy":181,"yearly":1230.06},{"doy":182,"yearly":1212.71},{"doy":183,"yearly":1195.57},{"doy":184,"yearly":1178.72},{"doy":185,"yearly":1162.25},{"doy":186,"yearly":1146.23},{"doy":187,"yearly":1130.73},{"doy":188,"yearly":1115.83},{"doy":189,"yearly":1101.59},{"doy":190,"yearly":1088.07},{"doy":191,"yearly":1075.33},{"doy":192,"yearly":1063.42},{"doy":193,"yearly":1052.4},{"doy":194,"yearly":1042.3},{"doy":195,"yearly":1033.17},{"doy":196,"yearly":1025.04},{"doy":197,"yearly":1017.95},{"doy":198,"yearly":1011.91},{"doy":199,"yearly":1006.95},{"doy":200,"yearly":1003.08},{"doy":201,"yearly":1000.32},{"doy":202,"yearly":998.66},{"doy":203,"yearly":998.11},{"doy":204,"yearly":998.66},{"doy":205,"yearly":1000.31},{"doy":206,"yearly":1003.03},{"doy":207,"yearly":1006.81},{"doy":208,"yearly":1011.62},{"doy":209,"yearly":1017.44},{"doy":210,"yearly":1024.22},{"doy":211,"yearly":1031.94},{"doy":212,"yearly":1040.56},{"doy":213,"yearly":1050.01},{"doy":214,"yearly":1060.27},{"doy":215,"yearly":1071.26},{"doy":216,"yearly":1082.95},{"doy":217,"yearly":1095.27},{"doy":218,"yearly":1108.15},{"doy":219,"yearly":1121.53},{"doy":220,"yearly":1135.35},{"doy":221,"yearly":1149.54},{"doy":222,"yearly":1164.02},{"doy":223,"yearly":1178.73},{"doy":224,"yearly":1193.58},{"doy":225,"yearly":1208.51},{"doy":226,"yearly":1223.44},{"doy":227,"yearly":1238.29},{"doy":228,"yearly":1252.99},{"doy":229,"yearly":1267.46},{"doy":230,"yearly":1281.62},{"doy":231,"yearly":1295.41},{"doy":232,"yearly":1308.73},{"doy":233,"yearly":1321.53},{"doy":234,"yearly":1333.72},{"doy":235,"yearly":1345.24},{"doy":236,"yearly":1356.02},{"doy":237,"yearly":1365.98},{"doy":238,"yearly":1375.07},{"doy":239,"yearly":1383.22},{"doy":240,"yearly":1390.36},{"doy":241,"yearly":1396.45},{"doy":242,"yearly":1401.42},{"doy":243,"yearly":1405.23},{"doy":244,"yearly":1407.82},{"doy":245,"yearly":1409.14},{"doy":246,"yearly":1409.16},{"doy":247,"yearly":1407.84},{"doy":248,"yearly":1405.13},{"doy":249,"yearly":1401.01},{"doy":250,"yearly":1395.45},{"doy":251,"yearly":1388.42},{"doy":252,"yearly":1379.9},{"doy":253,"yearly":1369.88},{"doy":254,"yearly":1358.34},{"doy":255,"yearly":1345.27},{"doy":256,"yearly":1330.66},{"doy":257,"yearly":1314.51},{"doy":258,"yearly":1296.82},{"doy":259,"yearly":1277.6},{"doy":260,"yearly":1256.86},{"doy":261,"yearly":1234.6},{"doy":262,"yearly":1210.85},{"doy":263,"yearly":1185.62},{"doy":264,"yearly":1158.92},{"doy":265,"yearly":1130.8},{"doy":266,"yearly":1101.28},{"doy":267,"yearly":1070.38},{"doy":268,"yearly":1038.14},{"doy":269,"yearly":1004.6},{"doy":270,"yearly":969.79},{"doy":271,"yearly":933.77},{"doy":272,"yearly":896.57},{"doy":273,"yearly":858.23},{"doy":274,"yearly":818.82},{"doy":275,"yearly":778.37},{"doy":276,"yearly":736.94},{"doy":277,"yearly":694.58},{"doy":278,"yearly":651.34},{"doy":279,"yearly":607.29},{"doy":280,"yearly":562.48},{"doy":281,"yearly":516.97},{"doy":282,"yearly":470.82},{"doy":283,"yearly":424.09},{"doy":284,"yearly":376.83},{"doy":285,"yearly":329.11},{"doy":286,"yearly":280.99},{"doy":287,"yearly":232.53},{"doy":288,"yearly":183.8},{"doy":289,"yearly":134.85},{"doy":290,"yearly":85.75},{"doy":291,"yearly":36.55},{"doy":292,"yearly":-12.68},{"doy":293,"yearly":-61.88},{"doy":294,"yearly":-110.99},{"doy":295,"yearly":-159.96},{"doy":296,"yearly":-208.72},{"doy":297,"yearly":-257.22},{"doy":298,"yearly":-305.4},{"doy":299,"yearly":-353.21},{"doy":300,"yearly":-400.58},{"doy":301,"yearly":-447.48},{"doy":302,"yearly":-493.83},{"doy":303,"yearly":-539.61},{"doy":304,"yearly":-584.74},{"doy":305,"yearly":-629.2},{"doy":306,"yearly":-672.92},{"doy":307,"yearly":-715.86},{"doy":308,"yearly":-757.99},{"doy":309,"yearly":-799.24},{"doy":310,"yearly":-839.6},{"doy":311,"yearly":-879},{"doy":312,"yearly":-917.43},{"doy":313,"yearly":-954.83},{"doy":314,"yearly":-991.17},{"doy":315,"yearly":-1026.43},{"doy":316,"yearly":-1060.56},{"doy":317,"yearly":-1093.55},{"doy":318,"yearly":-1125.35},{"doy":319,"yearly":-1155.94},{"doy":320,"yearly":-1185.3},{"doy":321,"yearly":-1213.41},{"doy":322,"yearly":-1240.23},{"doy":323,"yearly":-1265.76},{"doy":324,"yearly":-1289.97},{"doy":325,"yearly":-1312.84},{"doy":326,"yearly":-1334.37},{"doy":327,"yearly":-1354.54},{"doy":328,"yearly":-1373.33},{"doy":329,"yearly":-1390.74},{"doy":330,"yearly":-1406.77},{"doy":331,"yearly":-1421.39},{"doy":332,"yearly":-1434.62},{"doy":333,"yearly":-1446.45},{"doy":334,"yearly":-1456.88},{"doy":335,"yearly":-1465.9},{"doy":336,"yearly":-1473.54},{"doy":337,"yearly":-1479.78},{"doy":338,"yearly":-1484.65},{"doy":339,"yearly":-1488.15},{"doy":340,"yearly":-1490.28},{"doy":341,"yearly":-1491.08},{"doy":342,"yearly":-1490.54},{"doy":343,"yearly":-1488.7},{"doy":344,"yearly":-1485.57},{"doy":345,"yearly":-1481.17},{"doy":346,"yearly":-1475.54},{"doy":347,"yearly":-1468.68},{"doy":348,"yearly":-1460.64},{"doy":349,"yearly":-1451.45},{"doy":350,"yearly":-1441.13},{"doy":351,"yearly":-1429.73},{"doy":352,"yearly":-1417.27},{"doy":353,"yearly":-1403.81},{"doy":354,"yearly":-1389.37},{"doy":355,"yearly":-1374.01},{"doy":356,"yearly":-1357.77},{"doy":357,"yearly":-1340.69},{"doy":358,"yearly":-1322.82},{"doy":359,"yearly":-1304.22},{"doy":360,"yearly":-1284.93},{"doy":361,"yearly":-1265.01},{"doy":362,"yearly":-1244.52},{"doy":363,"yearly":-1223.51},{"doy":364,"yearly":-1202.03}],"weekly":[{"day":"Mon","weekly":33.96},{"day":"Tue","weekly":-5.77},{"day":"Wed","weekly":-11.74},{"day":"Thu","weekly":14.28},{"day":"Fri","weekly":-30.88},{"day":"Sat","weekly":-30.88},{"day":"Sun","weekly":31.03}]},"horizons":[{"window":"Days 1-25","mae":532.6378797984553,"rmse":737.268185507149,"mape":10.937701146138103},{"window":"Days 26-50","mae":1413.047896104407,"rmse":1510.709811303516,"mape":37.7546086906738},{"window":"Days 51-75","mae":1214.713411828572,"rmse":1571.5029908945712,"mape":30.515804561785924},{"window":"Days 76-100","mae":314.86471711666127,"rmse":367.63497656078835,"mape":11.222740296866021}],"residuals":[{"ds":"2020-09-08","resid":453.53,"pred":5872.8,"actual":6326.33},{"ds":"2020-09-09","resid":342.17,"pred":5860.1,"actual":6202.27},{"ds":"2020-09-10","resid":-120.33,"pred":5877.9,"actual":5757.57},{"ds":"2020-09-11","resid":456.2,"pred":5823,"actual":6279.2},{"ds":"2020-09-12","resid":-397.89,"pred":5811.73,"actual":5413.84},{"ds":"2020-09-13","resid":-705.25,"pred":5860.84,"actual":5155.59},{"ds":"2020-09-14","resid":-299.35,"pred":5849.44,"actual":5550.09},{"ds":"2020-09-15","resid":574.22,"pred":5793.82,"actual":6368.04},{"ds":"2020-09-16","resid":442.55,"pred":5770.44,"actual":6212.99},{"ds":"2020-09-17","resid":-549.03,"pred":5777.52,"actual":5228.5},{"ds":"2020-09-18","resid":510.21,"pred":5711.9,"actual":6222.11},{"ds":"2020-09-19","resid":312.7,"pred":5689.94,"actual":6002.64},{"ds":"2020-09-20","resid":463.56,"pred":5728.39,"actual":6191.95},{"ds":"2020-09-21","resid":972.38,"pred":5706.4,"actual":6678.78},{"ds":"2020-09-22","resid":46.41,"pred":5640.29,"actual":5686.71},{"ds":"2020-09-23","resid":476.46,"pred":5606.54,"actual":6082.99},{"ds":"2020-09-24","resid":158.17,"pred":5603.39,"actual":5761.56},{"ds":"2020-09-25","resid":834.92,"pred":5527.69,"actual":6362.62},{"ds":"2020-09-26","resid":1001.17,"pred":5495.84,"actual":6497.01},{"ds":"2020-09-27","resid":262.49,"pred":5524.61,"actual":5787.1},{"ds":"2020-09-28","resid":-2704.64,"pred":5493.17,"actual":2788.53},{"ds":"2020-09-29","resid":705.45,"pred":5417.85,"actual":6123.31},{"ds":"2020-09-30","resid":46.21,"pred":5375.15,"actual":5421.36},{"ds":"2020-10-01","resid":-244.02,"pred":5363.33,"actual":5119.32},{"ds":"2020-10-02","resid":236.66,"pred":5279.28,"actual":5515.94},{"ds":"2020-10-03","resid":1212.06,"pred":5239.37,"actual":6451.43},{"ds":"2020-10-04","resid":205.49,"pred":5260.42,"actual":5465.9},{"ds":"2020-10-05","resid":1000.62,"pred":5221.59,"actual":6222.21},{"ds":"2020-10-06","resid":729.98,"pred":5139.25,"actual":5869.23},{"ds":"2020-10-07","resid":2008.53,"pred":5089.88,"actual":7098.41},{"ds":"2020-10-08","resid":485.61,"pred":5071.78,"actual":5557.39},{"ds":"2020-10-09","resid":1740.53,"pred":4981.82,"actual":6722.35},{"ds":"2020-10-10","resid":1299.31,"pred":4936.42,"actual":6235.73},{"ds":"2020-10-11","resid":1497.73,"pred":4952.35,"actual":6450.09},{"ds":"2020-10-12","resid":742.2,"pred":4908.84,"actual":5651.03},{"ds":"2020-10-13","resid":768.01,"pred":4822.21,"actual":5590.22},{"ds":"2020-10-14","resid":1514.38,"pred":4768.99,"actual":6283.38},{"ds":"2020-10-15","resid":1412.76,"pred":4747.45,"actual":6160.21},{"ds":"2020-10-16","resid":-2244.8,"pred":4654.48,"actual":2409.68},{"ds":"2020-10-17","resid":-2095.99,"pred":4606.49,"actual":2510.51},{"ds":"2020-10-18","resid":-2109.14,"pred":4620.28,"actual":2511.14},{"ds":"2020-10-19","resid":-1941.42,"pred":4575.04,"actual":2633.61},{"ds":"2020-10-20","resid":-1676.24,"pred":4487.12,"actual":2810.88},{"ds":"2020-10-21","resid":1539.16,"pred":4433.03,"actual":5972.19},{"ds":"2020-10-22","resid":1967.64,"pred":4411.04,"actual":6378.68},{"ds":"2020-10-23","resid":-1896.07,"pred":4318.06,"actual":2421.98},{"ds":"2020-10-24","resid":-1159.46,"pred":4270.46,"actual":3111},{"ds":"2020-10-25","resid":-1413.56,"pred":4285.06,"actual":2871.5},{"ds":"2020-10-26","resid":-1050.31,"pred":4241.04,"actual":3190.72},{"ds":"2020-10-27","resid":-1615.19,"pred":4154.74,"actual":2539.56},{"ds":"2020-10-28","resid":-1388.21,"pred":4102.68,"actual":2714.47},{"ds":"2020-10-29","resid":1875.26,"pred":4083.11,"actual":5958.37},{"ds":"2020-10-30","resid":2151.09,"pred":3992.92,"actual":6144},{"ds":"2020-10-31","resid":3520.78,"pred":3948.5,"actual":7469.28},{"ds":"2020-11-01","resid":2885.52,"pred":3966.64,"actual":6852.16},{"ds":"2020-11-02","resid":-1141.65,"pred":3926.53,"actual":2784.87},{"ds":"2020-11-03","resid":-1082.35,"pred":3844.49,"actual":2762.14},{"ds":"2020-11-04","resid":-631.92,"pred":3797.03,"actual":3165.11},{"ds":"2020-11-05","resid":-1364.45,"pred":3782.39,"actual":2417.94},{"ds":"2020-11-06","resid":-131.36,"pred":3697.47,"actual":3566.1},{"ds":"2020-11-07","resid":-18.42,"pred":3658.63,"actual":3640.21},{"ds":"2020-11-08","resid":-797.08,"pred":3682.65,"actual":2885.57},{"ds":"2020-11-09","resid":3758.33,"pred":3648.71,"actual":7407.04},{"ds":"2020-11-10","resid":2405.4,"pred":3573.14,"actual":5978.54},{"ds":"2020-11-11","resid":-792.39,"pred":3532.4,"actual":2740.01},{"ds":"2020-11-12","resid":-1090.34,"pred":3524.77,"actual":2434.43},{"ds":"2020-11-13","resid":-484.28,"pred":3447.09,"actual":2962.81},{"ds":"2020-11-14","resid":-678.71,"pred":3415.74,"actual":2737.03},{"ds":"2020-11-15","resid":-258.67,"pred":3447.48,"actual":3188.81},{"ds":"2020-11-16","resid":-706.68,"pred":3421.48,"actual":2714.8},{"ds":"2020-11-17","resid":-947.98,"pred":3354.05,"actual":2406.07},{"ds":"2020-11-18","resid":-732.3,"pred":3321.65,"actual":2589.35},{"ds":"2020-11-19","resid":-887.04,"pred":3322.54,"actual":2435.5},{"ds":"2020-11-20","resid":-587.59,"pred":3253.55,"actual":2665.96},{"ds":"2020-11-21","resid":50.04,"pred":3231.05,"actual":3281.09},{"ds":"2020-11-22","resid":-575.41,"pred":3271.79,"actual":2696.38},{"ds":"2020-11-23","resid":-677.12,"pred":3254.92,"actual":2577.79},{"ds":"2020-11-24","resid":-176.95,"pred":3196.74,"actual":3019.79},{"ds":"2020-11-25","resid":-117.05,"pred":3173.71,"actual":3056.66},{"ds":"2020-11-26","resid":-505.44,"pred":3184.06,"actual":2678.62},{"ds":"2020-11-27","resid":-300.86,"pred":3124.61,"actual":2823.75},{"ds":"2020-11-28","resid":276.52,"pred":3111.73,"actual":3388.25},{"ds":"2020-11-29","resid":338.88,"pred":3162.14,"actual":3501.03},{"ds":"2020-11-30","resid":-104.08,"pred":3155,"actual":3050.91},{"ds":"2020-12-01","resid":-187.89,"pred":3106.57,"actual":2918.68},{"ds":"2020-12-02","resid":-159.55,"pred":3093.31,"actual":2933.77},{"ds":"2020-12-03","resid":509.36,"pred":3113.44,"actual":3622.8},{"ds":"2020-12-04","resid":-433.97,"pred":3063.77,"actual":2629.79},{"ds":"2020-12-05","resid":-597.5,"pred":3060.63,"actual":2463.13},{"ds":"2020-12-06","resid":-436.5,"pred":3120.76,"actual":2684.26},{"ds":"2020-12-07","resid":-381.98,"pred":3123.27,"actual":2741.29},{"ds":"2020-12-08","resid":-54.6,"pred":3084.45,"actual":3029.85},{"ds":"2020-12-09","resid":-477.4,"pred":3080.71,"actual":2603.32},{"ds":"2020-12-10","resid":-113.22,"pred":3110.26,"actual":2997.05},{"ds":"2020-12-11","resid":-148.28,"pred":3069.91,"actual":2921.64},{"ds":"2020-12-12","resid":91.61,"pred":3075.98,"actual":3167.59},{"ds":"2020-12-13","resid":22.42,"pred":3145.17,"actual":3167.59},{"ds":"2020-12-14","resid":226.75,"pred":3156.6,"actual":3383.35},{"ds":"2020-12-15","resid":-411.94,"pred":3126.53,"actual":2714.59},{"ds":"2020-12-16","resid":-546.32,"pred":3131.36,"actual":2585.04}]}</script>
+
+<script>
+(function(){
+  var D = JSON.parse(document.getElementById('forecast-data').textContent);
+
+  var fmt = {
+    n: function(v){ return v == null ? '—' : new Intl.NumberFormat('en-AU').format(Math.round(v)); },
+    pct: function(v, dp){ return v.toFixed(dp == null ? 1 : dp) + '%'; },
+    date: function(s){ return new Date(s).toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'}); },
+    dateShort: function(s){ return new Date(s).toLocaleDateString('en-AU', {day:'2-digit', month:'short'}); }
+  };
+
+  var NS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs, children){
+    attrs = attrs || {}; children = children || [];
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    for (var i=0; i<children.length; i++){
+      var c = children[i]; if (c == null) continue;
+      e.appendChild(c instanceof Node ? c : document.createTextNode(c));
+    }
+    return e;
+  }
+
+  function kpi(label, value, unit, sub, opts){
+    opts = opts || {};
+    var c = document.createElement('div');
+    c.className = 'kpi-card' + (opts.accent ? ' accent' : '') + (opts.alt ? ' alt' : '');
+    var html = '<div class="kpi-label">' + label + '</div>';
+    html += '<div class="kpi-value">' + value + (unit ? '<span class="unit">' + unit + '</span>' : '') + '</div>';
+    if (sub) html += '<div class="kpi-sub">' + sub + '</div>';
+    c.innerHTML = html;
+    return c;
+  }
+
+  function card(title, sub, body){
+    var c = document.createElement('div');
+    c.className = 'card';
+    var html = '';
+    if (title) html += '<div class="card-title">' + title + '</div>';
+    if (sub) html += '<div class="card-sub">' + sub + '</div>';
+    if (title || sub) html += '<div class="card-spacer"></div>';
+    c.innerHTML = html;
+    if (body instanceof Node) c.appendChild(body);
+    else if (typeof body === 'string') c.insertAdjacentHTML('beforeend', body);
+    return c;
+  }
+
+  // ──────── Forecast Line Chart ────────
+  function lineChart(opts){
+    var width = opts.width || 800, height = opts.height || 240;
+    var history = opts.history || [], forecast = opts.forecast || [];
+    var yKey = opts.yKey || 'y', forecastY = opts.forecastY || 'yhat', xKey = 'ds';
+    var showBand = opts.showBand !== false;
+    var padL=46, padR=14, padT=18, padB=28;
+    var W = width - padL - padR, H = height - padT - padB;
+
+    var all = history.concat(forecast);
+    var xs = all.map(function(d){ return new Date(d[xKey]).getTime(); });
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+    var ys = [];
+    history.forEach(function(d){ if (d[yKey] != null) ys.push(d[yKey]); if (d[forecastY] != null) ys.push(d[forecastY]); });
+    forecast.forEach(function(d){ ys.push(d[forecastY]); if (d.upper != null) ys.push(d.upper); if (d.lower != null) ys.push(d.lower); });
+    var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+    var pad = (y1-y0)*0.08; y0 -= pad; y1 += pad; if (y0 < 0) y0 = 0;
+    function xS(v){ return padL + (v-x0)/(x1-x0)*W; }
+    function yS(v){ return padT + (1-(v-y0)/(y1-y0))*H; }
+
+    var svg = svgEl('svg', {width:width, height:height, style:'display:block;font-family:Figtree,sans-serif;'});
+    for (var i=0; i<=4; i++){
+      var yv = y0 + (y1-y0)*(i/4); var yp = yS(yv);
+      svg.appendChild(svgEl('line', {x1:padL, y1:yp, x2:padL+W, y2:yp, stroke:'#F0EBFF'}));
+      svg.appendChild(svgEl('text', {x:padL-6, y:yp+3, 'text-anchor':'end', fill:'#9CA3AF', 'font-size':'10'}, [fmt.n(yv)]));
+    }
+    for (var j=0; j<=6; j++){
+      var xv = x0 + (x1-x0)*(j/6); var xp = xS(xv);
+      svg.appendChild(svgEl('text', {x:xp, y:height-8, 'text-anchor':'middle', fill:'#9CA3AF', 'font-size':'10'}, [new Date(xv).toLocaleDateString('en-AU', {month:'short', year:'2-digit'})]));
+    }
+
+    if (showBand && forecast.length){
+      var bandPath = '';
+      forecast.forEach(function(d, i){ var x=xS(new Date(d[xKey]).getTime()); var y=yS(d.upper); bandPath += (i===0?'M':'L') + x + ',' + y + ' '; });
+      for (var i2=forecast.length-1; i2>=0; i2--){ var d=forecast[i2]; var x=xS(new Date(d[xKey]).getTime()); var y=yS(d.lower); bandPath += 'L' + x + ',' + y + ' '; }
+      bandPath += 'Z';
+      svg.appendChild(svgEl('path', {d: bandPath, fill:'#C4B5FD', opacity:'0.32'}));
+    }
+
+    if (history.length){
+      var pa = '', first = true;
+      history.forEach(function(d){ if (d[yKey] != null){ var x=xS(new Date(d[xKey]).getTime()); var y=yS(d[yKey]); pa += (first?'M':'L') + x + ',' + y + ' '; first = false; } });
+      svg.appendChild(svgEl('path', {d: pa, fill:'none', stroke:'#5B21B6', 'stroke-width':'1.6', 'stroke-linejoin':'round'}));
+    }
+
+    if (history.length && history[0][forecastY] != null){
+      var pfh = '', firstF = true;
+      history.forEach(function(d){ if (d[forecastY] != null){ var x=xS(new Date(d[xKey]).getTime()); var y=yS(d[forecastY]); pfh += (firstF?'M':'L') + x + ',' + y + ' '; firstF = false; } });
+      svg.appendChild(svgEl('path', {d: pfh, fill:'none', stroke:'#A78BFA', 'stroke-width':'1.4', 'stroke-dasharray':'4 3', opacity:'0.65'}));
+    }
+
+    if (forecast.length){
+      var pf = '';
+      forecast.forEach(function(d, i){ var x=xS(new Date(d[xKey]).getTime()); var y=yS(d[forecastY]); pf += (i===0?'M':'L') + x + ',' + y + ' '; });
+      svg.appendChild(svgEl('path', {d: pf, fill:'none', stroke:'#7C3AED', 'stroke-width':'2.4'}));
+    }
+
+    if (history.length && forecast.length){
+      var x = xS(new Date(forecast[0][xKey]).getTime());
+      svg.appendChild(svgEl('line', {x1:x, y1:padT, x2:x, y2:padT+H, stroke:'#C4B5FD', 'stroke-dasharray':'3 4'}));
+      svg.appendChild(svgEl('text', {x:x+4, y:padT+12, fill:'#6D28D9', 'font-size':'10', 'font-weight':'600'}, ['Forecast \u2192']));
+    }
+    return svg;
+  }
+
+  function residualScatter(data){
+    var width = 720, height = 220;
+    var padL=46, padR=12, padT=14, padB=28;
+    var W = width - padL - padR, H = height - padT - padB;
+    var xs = data.map(function(d){ return new Date(d.ds).getTime(); });
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+    var ys = data.map(function(d){ return d.resid; });
+    var absMax = Math.max.apply(null, ys.map(Math.abs));
+    var y0 = -absMax*1.1, y1 = absMax*1.1;
+    function xS(v){ return padL + (v-x0)/(x1-x0)*W; }
+    function yS(v){ return padT + (1-(v-y0)/(y1-y0))*H; }
+    var svg = svgEl('svg', {width:width, height:height, style:'display:block;'});
+    [y0, y0/2, 0, y1/2, y1].forEach(function(yv){
+      var yp = yS(yv);
+      svg.appendChild(svgEl('line', {x1:padL, y1:yp, x2:padL+W, y2:yp, stroke: yv===0 ? '#C4B5FD' : '#F0EBFF'}));
+      svg.appendChild(svgEl('text', {x:padL-6, y:yp+3, 'text-anchor':'end', fill:'#9CA3AF', 'font-size':'10'}, [fmt.n(yv)]));
+    });
+    for (var i=0; i<=5; i++){
+      var xv = x0 + (x1-x0)*(i/5); var xp = xS(xv);
+      svg.appendChild(svgEl('text', {x:xp, y:height-8, 'text-anchor':'middle', fill:'#9CA3AF', 'font-size':'10'}, [new Date(xv).toLocaleDateString('en-AU', {month:'short', day:'2-digit'})]));
+    }
+    data.forEach(function(d){
+      var cx = xS(new Date(d.ds).getTime()); var cy = yS(d.resid);
+      svg.appendChild(svgEl('circle', {cx:cx, cy:cy, r:'2.8', fill: d.resid<0 ? '#A78BFA' : '#7C3AED', opacity:'0.78'}));
+    });
+    return svg;
+  }
+
+  function componentChart(opts){
+    var width = opts.width || 380, height = opts.height || 140, data = opts.data || [];
+    var xKey = opts.xKey, yKey = opts.yKey || 'value', labelKey = opts.labelKey || null;
+    var color = opts.color || '#7C3AED', fill = !!opts.fill;
+    var padL=42, padR=12, padT=12, padB=26;
+    var W = width - padL - padR, H = height - padT - padB;
+    var x0, x1;
+    if (xKey && data[0] && data[0][xKey]){
+      var xs = data.map(function(d){ return new Date(d[xKey]).getTime(); });
+      x0 = Math.min.apply(null, xs); x1 = Math.max.apply(null, xs);
+    } else { x0 = 0; x1 = data.length - 1; }
+    var ys = data.map(function(d){ return d[yKey]; });
+    var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+    var pad = (y1-y0)*0.14 || 1; y0 -= pad; y1 += pad;
+    function xS(v){ return padL + (v-x0)/((x1-x0)||1)*W; }
+    function yS(v){ return padT + (1-(v-y0)/((y1-y0)||1))*H; }
+    var svg = svgEl('svg', {width:width, height:height, style:'display:block;'});
+    if (y0 < 0 && y1 > 0){
+      svg.appendChild(svgEl('line', {x1:padL, y1:yS(0), x2:padL+W, y2:yS(0), stroke:'#C4B5FD', 'stroke-dasharray':'2 3'}));
+    }
+    for (var i=0; i<=3; i++){
+      var yv = y0 + (y1-y0)*(i/3); var yp = yS(yv);
+      svg.appendChild(svgEl('line', {x1:padL, y1:yp, x2:padL+W, y2:yp, stroke:'#F0EBFF'}));
+      svg.appendChild(svgEl('text', {x:padL-6, y:yp+3, 'text-anchor':'end', fill:'#9CA3AF', 'font-size':'10'}, [fmt.n(yv)]));
+    }
+    if (labelKey){
+      data.forEach(function(d,i){
+        svg.appendChild(svgEl('text', {x:xS(i), y:height-7, 'text-anchor':'middle', fill:'#6B7280', 'font-size':'10.5', 'font-weight':'600'}, [d[labelKey]]));
+      });
+    } else if (xKey && data[0] && data[0][xKey]){
+      for (var k=0; k<=4; k++){
+        var xv = x0 + (x1-x0)*(k/4); var xp = xS(xv);
+        svg.appendChild(svgEl('text', {x:xp, y:height-7, 'text-anchor':'middle', fill:'#9CA3AF', 'font-size':'10'}, [new Date(xv).toLocaleDateString('en-AU', {month:'short', year:'2-digit'})]));
+      }
+    } else {
+      // numeric x labels (e.g. day-of-year): show 4 ticks
+      for (var m=0; m<=4; m++){
+        var idx = Math.round(m/4 * (data.length-1));
+        svg.appendChild(svgEl('text', {x:xS(idx), y:height-7, 'text-anchor':'middle', fill:'#9CA3AF', 'font-size':'10'}, [opts.xTickFormat ? opts.xTickFormat(idx) : idx]));
+      }
+    }
+    var path = '';
+    data.forEach(function(d,i){
+      var xv = labelKey ? i : (xKey ? new Date(d[xKey]).getTime() : i);
+      var x = xS(xv), y = yS(d[yKey]);
+      path += (i===0?'M':'L') + x + ',' + y + ' ';
+    });
+    if (fill){
+      var lastIdx = labelKey ? data.length-1 : (xKey ? x1 : data.length-1);
+      var firstIdx = labelKey ? 0 : (xKey ? x0 : 0);
+      var fillPath = path + 'L' + xS(lastIdx) + ',' + (padT+H) + ' L' + xS(firstIdx) + ',' + (padT+H) + ' Z';
+      svg.appendChild(svgEl('path', {d: fillPath, fill: color, opacity:'0.14'}));
+    }
+    svg.appendChild(svgEl('path', {d: path, fill:'none', stroke: color, 'stroke-width':'2.2', 'stroke-linejoin':'round'}));
+    if (labelKey){
+      data.forEach(function(d,i){
+        svg.appendChild(svgEl('circle', {cx: xS(i), cy: yS(d[yKey]), r:'3.5', fill:'#fff', stroke: color, 'stroke-width':'1.8'}));
+      });
+    }
+    return svg;
+  }
+
+  // ─── Pages ───
+  var pages = {
+
+    exec: function(){
+      var k = D.kpis;
+      var root = document.createElement('div');
+      root.innerHTML =
+        '<div class="page-header">' +
+          '<div>' +
+            '<h1 class="page-title">Executive Summary</h1>' +
+            '<div class="page-sub">Daily sales · Product 2667437 · Store QLD_CW_ST0203 · ' + fmt.date(D.meta.range_start) + ' → ' + fmt.date(D.meta.range_end) + '</div>' +
+          '</div>' +
+          '<div class="page-sub">Model: Prophet (95% CI) · 100-day forward forecast</div>' +
+        '</div>';
+      var content = document.createElement('div');
+      content.className = 'page-content';
+
+      var strip = document.createElement('div');
+      strip.className = 'kpi-strip';
+      strip.appendChild(kpi('Forecast Total (Next 100 Days)', fmt.n(k.forecast_total), '', 'Avg ' + fmt.n(k.forecast_total/100) + ' / day', {accent:true}));
+      strip.appendChild(kpi('Total Observed Sales', fmt.n(k.total_observed), '', D.meta.n_observations + ' daily observations'));
+      strip.appendChild(kpi('Average Daily Sales', fmt.n(k.avg_daily), '', 'Volatility σ ' + fmt.n(k.sigma)));
+      strip.appendChild(kpi('Holdout MAPE', k.test_mape.toFixed(1), '%', 'RMSE ' + fmt.n(k.test_rmse) + ' on 100-day holdout', {alt:true}));
+      strip.appendChild(kpi('Strongest Cycle', 'Yearly', '', '~3,400 unit swing May–Sep vs Nov–Feb', {alt:true}));
+      content.appendChild(strip);
+
+      var fcCard = card('Forecast vs Actual', 'Weekly history + 100-day forward (95% confidence band shaded)', null);
+      fcCard.appendChild(lineChart({
+        width: 1180, height: 360,
+        history: D.history_weekly,
+        forecast: D.forecast,
+        yKey: 'y', forecastY: 'yhat'
+      }));
+      var legend = document.createElement('div');
+      legend.className = 'legend';
+      legend.style.marginTop = '6px';
+      legend.innerHTML =
+        '<span class="legend-item"><span class="legend-dot" style="background:#5B21B6"></span>Actual</span>' +
+        '<span class="legend-item"><span class="legend-dot" style="background:#A78BFA"></span>Model fit (in-sample)</span>' +
+        '<span class="legend-item"><span class="legend-dot" style="background:#7C3AED"></span>Forecast (100-day)</span>' +
+        '<span class="legend-item"><span class="legend-dot" style="background:#C4B5FD;opacity:.55"></span>95% confidence band</span>';
+      fcCard.appendChild(legend);
+      content.appendChild(fcCard);
+
+      root.appendChild(content);
+      return root;
+    },
+
+    detail: function(){
+      var k = D.kpis;
+      var root = document.createElement('div');
+      root.innerHTML =
+        '<div class="page-header">' +
+          '<div>' +
+            '<h1 class="page-title">Forecast Detail</h1>' +
+            '<div class="page-sub">100-day forward forecast · ' + fmt.date(D.meta.forecast_start) + ' → ' + fmt.date(D.meta.forecast_end) + '</div>' +
+          '</div>' +
+          '<div class="page-sub">95% interval width: ±' + fmt.n(1.96 * D.kpis.sigma) + ' units</div>' +
+        '</div>';
+      var content = document.createElement('div');
+      content.className = 'page-content';
+
+      var avgFc = k.forecast_total / 100;
+      var fcAvgVsHist = ((avgFc - k.avg_daily) / k.avg_daily * 100).toFixed(1);
+      var lo = D.forecast.reduce(function(a,b){ return a+b.lower; }, 0) / D.forecast.length;
+      var hi = D.forecast.reduce(function(a,b){ return a+b.upper; }, 0) / D.forecast.length;
+
+      var strip = document.createElement('div');
+      strip.className = 'kpi-strip';
+      strip.appendChild(kpi('Peak Forecast Day', fmt.dateShort(k.peak_date), '', 'Value: ' + fmt.n(k.peak_value) + ' units', {accent:true}));
+      strip.appendChild(kpi('Avg Forecast / Day', fmt.n(avgFc), '', 'vs historical ' + fmt.n(k.avg_daily) + ' (' + (fcAvgVsHist >= 0 ? '+' : '') + fcAvgVsHist + '%)'));
+      strip.appendChild(kpi('Forecast Lower (avg)', fmt.n(lo), '', 'Lower 95% bound'));
+      strip.appendChild(kpi('Forecast Upper (avg)', fmt.n(hi), '', 'Upper 95% bound'));
+      content.appendChild(strip);
+
+      var detailCard = card('Last 200 days observed + 100-day forward', 'Daily resolution with uncertainty interval', null);
+      detailCard.appendChild(lineChart({
+        width: 1180, height: 360,
+        history: D.history_daily_tail,
+        forecast: D.forecast,
+        yKey: 'y', forecastY: 'yhat'
+      }));
+      content.appendChild(detailCard);
+
+      root.appendChild(content);
+      return root;
+    },
+
+    season: function(){
+      var root = document.createElement('div');
+      root.innerHTML =
+        '<div class="page-header">' +
+          '<div>' +
+            '<h1 class="page-title">Seasonality Decomposition</h1>' +
+            '<div class="page-sub">Additive Prophet model: trend + yearly + weekly components</div>' +
+          '</div>' +
+          '<div class="page-sub">Yearly is the dominant signal for this SKU</div>' +
+        '</div>';
+      var content = document.createElement('div');
+      content.className = 'page-content';
+
+      var trendCard = card('Trend Component', 'Long-run trajectory · captured by the linear term', null);
+      trendCard.appendChild(componentChart({
+        width: 1180, height: 170,
+        data: D.components.trend, xKey:'ds', yKey:'trend',
+        color:'#7C3AED', fill:true
+      }));
+      content.appendChild(trendCard);
+
+      var row = document.createElement('div');
+      row.className = 'grid-2';
+      row.style.marginTop = '12px';
+
+      var yearlyCard = card('Yearly Seasonality', 'Day of year · normalised contribution to forecast', null);
+      var yearlyData = D.components.yearly;
+      var yMax = -Infinity, yMin = Infinity, yMaxIdx = 0, yMinIdx = 0;
+      yearlyData.forEach(function(d,i){ if (d.yearly > yMax){ yMax = d.yearly; yMaxIdx = i; } if (d.yearly < yMin){ yMin = d.yearly; yMinIdx = i; } });
+      yearlyCard.appendChild(componentChart({
+        width: 582, height: 220,
+        data: yearlyData, yKey: 'yearly', xKey: null,
+        color:'#7C3AED',
+        xTickFormat: function(idx){ var d = new Date(2020, 0, idx+1); return d.toLocaleDateString('en-AU', {month:'short'}); }
+      }));
+      var yAnnot = document.createElement('div');
+      yAnnot.style.cssText = 'font-size:11.5px;color:#6B7280;margin-top:8px;line-height:1.55;';
+      function doyDate(doy){ var d = new Date(2020, 0, doy+1); return d.toLocaleDateString('en-AU', {month:'short', day:'2-digit'}); }
+      yAnnot.innerHTML = '<strong style="color:#5B21B6;">Peak:</strong> ' + doyDate(yMaxIdx) + ' (+' + fmt.n(yMax) + ') · <strong style="color:#5B21B6;">Trough:</strong> ' + doyDate(yMinIdx) + ' (' + fmt.n(yMin) + ') · Range: <strong style="color:#5B21B6;">' + fmt.n(yMax-yMin) + ' units</strong>';
+      yearlyCard.appendChild(yAnnot);
+      row.appendChild(yearlyCard);
+
+      var weeklyCard = card('Weekly Seasonality', 'Day-of-week effect · much smaller than yearly', null);
+      var weeklyData = D.components.weekly;
+      var wMax = Math.max.apply(null, weeklyData.map(function(d){ return d.weekly; }));
+      var wMin = Math.min.apply(null, weeklyData.map(function(d){ return d.weekly; }));
+      weeklyCard.appendChild(componentChart({
+        width: 582, height: 220,
+        data: weeklyData, yKey: 'weekly', labelKey: 'day',
+        color:'#7C3AED'
+      }));
+      var wAnnot = document.createElement('div');
+      wAnnot.style.cssText = 'font-size:11.5px;color:#6B7280;margin-top:8px;line-height:1.55;';
+      wAnnot.innerHTML = '<strong style="color:#5B21B6;">Range:</strong> ' + fmt.n(wMax-wMin) + ' units across the week. <span class="pill purple" style="margin-left:4px;">Weak weekly pattern</span> — annual cycle dominates.';
+      weeklyCard.appendChild(wAnnot);
+      row.appendChild(weeklyCard);
+
+      content.appendChild(row);
+      root.appendChild(content);
+      return root;
+    },
+
+    perf: function(){
+      var k = D.kpis;
+      var root = document.createElement('div');
+      var splitDate = D.history_daily_tail[D.history_daily_tail.length - 100].ds;
+      root.innerHTML =
+        '<div class="page-header">' +
+          '<div>' +
+            '<h1 class="page-title">Model Performance</h1>' +
+            '<div class="page-sub">100-day hold-out evaluation · split at ' + fmt.date(splitDate) + '</div>' +
+          '</div>' +
+          '<div class="page-sub">Lower MAPE = better. Stationary residuals indicate unbiased forecast.</div>' +
+        '</div>';
+      var content = document.createElement('div');
+      content.className = 'page-content';
+
+      var strip = document.createElement('div');
+      strip.className = 'kpi-strip';
+      strip.appendChild(kpi('Test MAPE', k.test_mape.toFixed(1), '%', 'Mean absolute percentage error', {accent:true}));
+      strip.appendChild(kpi('Test RMSE', fmt.n(k.test_rmse), '', 'Train: ' + fmt.n(k.train_rmse)));
+      strip.appendChild(kpi('Test MAE', fmt.n(k.test_mae), '', 'Mean absolute error'));
+      strip.appendChild(kpi('Train MAPE', k.train_mape.toFixed(1), '%', (D.meta.n_observations - D.meta.holdout_days) + ' days in-sample', {alt:true}));
+      content.appendChild(strip);
+
+      var row = document.createElement('div');
+      row.className = 'grid-3-2';
+
+      var residCard = card('Residual Plot (Hold-out)', 'Forecast error per day · should cluster around zero', null);
+      residCard.appendChild(residualScatter(D.residuals));
+      var meanResid = D.residuals.reduce(function(s,d){ return s+d.resid; }, 0) / D.residuals.length;
+      var sdResid = Math.sqrt(D.residuals.reduce(function(s,d){ return s + d.resid*d.resid; }, 0) / D.residuals.length);
+      var rNote = document.createElement('div');
+      rNote.style.cssText = 'font-size:11.5px;color:#6B7280;margin-top:8px;line-height:1.55;';
+      rNote.innerHTML = '<strong style="color:#5B21B6;">Mean residual:</strong> ' + fmt.n(meanResid) + ' (≈0 = unbiased) · <strong style="color:#5B21B6;">σ:</strong> ' + fmt.n(sdResid);
+      residCard.appendChild(rNote);
+      row.appendChild(residCard);
+
+      var horizonCard = card('Accuracy by Horizon', 'Test split into four 25-day windows', null);
+      var tbl = document.createElement('table');
+      tbl.className = 'dt';
+      var thead = '<thead><tr><th>Window</th><th style="text-align:right;">MAPE</th><th style="text-align:right;">RMSE</th><th></th></tr></thead>';
+      var rows = D.horizons.map(function(h){
+        var pillClass = h.mape < 15 ? '' : (h.mape < 25 ? 'amber' : 'red');
+        var label = h.mape < 15 ? 'Good' : (h.mape < 25 ? 'OK' : 'Weak');
+        return '<tr><td>' + h.window + '</td>' +
+               '<td style="text-align:right;font-family:Plus Jakarta Sans,sans-serif;font-weight:700;color:#5B21B6;">' + h.mape.toFixed(1) + '%</td>' +
+               '<td style="text-align:right;font-family:Plus Jakarta Sans,sans-serif;font-weight:600;color:#6B7280;">' + fmt.n(h.rmse) + '</td>' +
+               '<td><span class="pill ' + pillClass + '">' + label + '</span></td></tr>';
+      }).join('');
+      tbl.innerHTML = thead + '<tbody>' + rows + '</tbody>';
+      horizonCard.appendChild(tbl);
+      var hNote = document.createElement('div');
+      hNote.style.cssText = 'font-size:11.5px;color:#6B7280;margin-top:10px;line-height:1.55;';
+      hNote.innerHTML = 'Accuracy degrades around the Aug–Oct seasonal turning point and recovers as the model re-aligns with the Nov dip.';
+      horizonCard.appendChild(hNote);
+      row.appendChild(horizonCard);
+
+      content.appendChild(row);
+      root.appendChild(content);
+      return root;
+    },
+
+    method: function(){
+      var root = document.createElement('div');
+      root.innerHTML =
+        '<div class="page-header">' +
+          '<div>' +
+            '<h1 class="page-title">Methodology &amp; Caveats</h1>' +
+            '<div class="page-sub">Why Prophet · what is modelled · what is not</div>' +
+          '</div>' +
+          '<div class="page-sub">Notebook: <code style="background:#F3F0FF;padding:2px 6px;border-radius:4px;color:#6D28D9;font-family:Plus Jakarta Sans,sans-serif;font-weight:600;font-size:11px;">Pipeline_forcast.ipynb</code></div>' +
+        '</div>';
+      var content = document.createElement('div');
+      content.className = 'page-content';
+
+      var grid = document.createElement('div');
+      grid.className = 'method-grid';
+
+      grid.appendChild(card('Why Prophet', '', '<div class="method-block">' +
+        '<p>Prophet (Facebook / Meta) is purpose-built for business time series with strong seasonality and occasional missing days. It decomposes the signal additively into <strong>trend + yearly + weekly + daily</strong>, fits robustly with default settings, and returns calibrated uncertainty intervals out of the box.</p>' +
+        '<p>For a single-SKU daily sales series with a clear annual cycle and minimal weekly structure, Prophet matches the data-generating story better than ARIMA or generic ML regression, and ships faster.</p>' +
+        '<div><span class="tag">interval_width=0.95</span><span class="tag">daily_seasonality=True</span><span class="tag">horizon=100 days</span></div>' +
+      '</div>'));
+
+      grid.appendChild(card('Pipeline Steps', '', '<div class="method-block">' +
+        '<p><strong>1.</strong> Parse ddmmyyyy integer dates into datetime (custom logic, not pd.to_datetime defaults).</p>' +
+        '<p><strong>2.</strong> Filter to product 2667437 at store QLD_CW_ST0203. Rename to <code>ds</code>, <code>y</code>.</p>' +
+        '<p><strong>3.</strong> Fit Prophet with 95% interval and daily seasonality enabled.</p>' +
+        '<p><strong>4.</strong> Extend a 100-day future frame and predict.</p>' +
+        '<p><strong>5.</strong> Visualise fit, then break into trend, weekly, yearly, daily components.</p>' +
+      '</div>'));
+
+      grid.appendChild(card('Validation Harness', '', '<div class="method-block">' +
+        '<p>The published notebook ships a forward forecast but no train / test split. For this dashboard the model was re-fit with the last 100 days held out, then evaluated with <strong>MAPE / RMSE / MAE</strong> on the holdout, and accuracy reported by 25-day horizon window.</p>' +
+        '<p>Residual SD on the training residuals (' + fmt.n(D.kpis.sigma) + ' units) sets the band shown on the forecast chart at z = 1.96.</p>' +
+      '</div>'));
+
+      var caveat = document.createElement('div');
+      caveat.className = 'card caveat';
+      caveat.innerHTML =
+        '<div class="card-title">Caveats &amp; Honest Framing</div>' +
+        '<div class="card-spacer"></div>' +
+        '<div class="method-block">' +
+          '<p><strong>Scope is narrow.</strong> One product at one store. The forecast is technically sound for that scope, but do not generalise to a wider portfolio.</p>' +
+          '<p><strong>Public dataset.</strong> 1,080 daily observations. Numbers are real but not commercially material. What is demonstrated is the pipeline: date parsing, additive decomposition, forward forecast with uncertainty, hold-out evaluation, performance dashboarding.</p>' +
+          '<p><strong>No exogenous regressors.</strong> Holidays, promotions, price, weather — none are in the dataset, so none are modelled. Adding them is the obvious next step.</p>' +
+        '</div>';
+      grid.appendChild(caveat);
+
+      content.appendChild(grid);
+      root.appendChild(content);
+      return root;
+    }
+  };
+
+  // ─── Nav ───
+  var navItems = [
+    {key:'exec',   label:'Executive Summary', icon: '<path d="M3 12h3l2-7 4 14 2-7h3"></path>'},
+    {key:'detail', label:'Forecast Detail',   icon: '<path d="M3 17l6-6 4 4 8-9"></path><path d="M14 6h7v7"></path>'},
+    {key:'season', label:'Seasonality',       icon: '<circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3v18"></path>'},
+    {key:'perf',   label:'Model Performance', icon: '<rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M8 14l3-3 2 2 3-5"></path>'},
+    {key:'method', label:'Methodology',       icon: '<circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 17h.01"></path>'}
+  ];
+  var navEl = document.getElementById('nav');
+  navItems.forEach(function(n){
+    var item = document.createElement('div');
+    item.className = 'nav-item';
+    item.setAttribute('data-screen-label', n.label);
+    item.dataset.key = n.key;
+    item.innerHTML = '<svg class="ico" viewBox="0 0 24 24">' + n.icon + '</svg><span>' + n.label + '</span>';
+    item.addEventListener('click', function(){ go(n.key); });
+    navEl.appendChild(item);
+  });
+
+  function fitPage(){
+    var shell = document.getElementById('page');
+    if (!shell) return;
+    var content = shell.firstElementChild;
+    if (!content) return;
+    content.style.transform = '';
+    content.style.width = '';
+    if (content.style.height === '100%') return;
+    var availH = shell.clientHeight;
+    var availW = shell.clientWidth;
+    var h1 = content.scrollHeight;
+    if (h1 <= availH) return;
+    content.style.width = (availW / (availH / h1)) + 'px';
+    setTimeout(function(){
+      var h2 = content.scrollHeight;
+      var scale = Math.min(1, availH / h2);
+      content.style.transformOrigin = 'top left';
+      content.style.transform = 'scale(' + scale + ')';
+    }, 50);
+  }
+
+  function go(key){
+    var items = document.querySelectorAll('.nav-item');
+    for (var i=0; i<items.length; i++) items[i].classList.toggle('active', items[i].dataset.key === key);
+    var page = document.getElementById('page');
+    page.innerHTML = '';
+    page.appendChild(pages[key]());
+    try { localStorage.setItem('forecast.page', key); } catch(e){}
+    setTimeout(fitPage, 350);
+  }
+
+  var initial = 'exec';
+  try { var saved = localStorage.getItem('forecast.page'); if (saved && pages[saved]) initial = saved; } catch(e){}
+  go(initial);
+})();
+
+</script>
+
+</body>
+</html>
